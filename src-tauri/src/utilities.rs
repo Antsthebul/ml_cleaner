@@ -1,9 +1,17 @@
-use dotenv;
-use std::env;
+use dotenvy;
+use std::{
+    env, 
+    path};
 
 pub fn load_env() -> Result<(), std::env::VarError>{
-    dotenv::dotenv().ok();
+    
+    match dotenvy::from_path(path::Path::new("../.env")){
+        Ok(_)=>(),
+        Err(err)=>println!("Your error {}", err)
+    };
+ 
     env::var("AWS_ACCESS_KEY")?;
-    env::var("AWS_SCRET_KEY")?;
+    env::var("AWS_SECRET_KEY")?;
+    env::var("PAPERSPACE_API_KEY")?;
     Ok(())
 }
