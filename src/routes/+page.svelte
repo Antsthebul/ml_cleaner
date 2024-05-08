@@ -32,7 +32,7 @@
         default_machine:string | null
     }
 
-    $: runningState = false;
+    $: runningState = {} as {[key:string]:boolean};
     $: machines = [] as Machine[];
     $: configuration={default_machine:null} as Configuration;
 
@@ -49,9 +49,8 @@
         invoke("get_status")
     }
 
-    async function isRunning(){
-        let result:{[key:string]: boolean} = await invoke("is_running")
-        runningState = result?.data ?? false
+    function isRunning(machineId:string){
+        return Boolean(runningState[machineId])
 
     }
     async function getConfig(){
@@ -63,6 +62,16 @@
         await invoke("update_default_machine", {machineId})
         await getConfig()
 
+    }
+    async function getMachineState(machineId:string){
+        let result:{[key:string]: boolean} = await invoke("is_running", {machineId})
+        let machineStatus = result?.data ?? false
+        runningState = {...runningState, machineId:machineStatus}
+
+    }
+
+    async function startMachine(machineId:string){
+        await invoke("start_machine", {machineId})
     }
     
     // setInterval(isRunning,5000)
@@ -76,7 +85,7 @@
 <div>
     <p>Default Machine: {configuration.default_machine}</p>
     {#if configuration.default_machine}
-    <div id="indicator" class={`${runningState ? "green":"red"}`}>
+    <div id="indicator" class={`${runningState[configuration.default_machine] ? "green":"red"}`}>
     </div>
     {/if}
 <div>
@@ -87,15 +96,18 @@
 </div>
 
 </div>
+<h1>Machines</h1>
 <div>
-    {#each machines as machine}
+    {#each machines as machine, i}
     <div>
+        <h3>Machine # {i+1}</h3>
+        <button on:click={()=>getMachineState(machine.id)}>Get State</button>
         <p>ID: {machine.id}</p>
         <p>Machine: {machine.name}</p>
         <p>State: {machine.state}</p>
     </div>
-    <button disabled={true}>Start</button>
-    <button disabled={!isRunning}>Stop</button>
+    <button disabled={isRunning(machine.id)} on:click={()=>startMachine(machine.id)}>Start</button>
+    <button disabled={!isRunning(machine.id)}>Stop</button>
     <button 
         on:click={()=>updateDefaultMachine(machine.id === configuration.default_machine ? "resetDefaultMachine":machine.id)}
         >{machine.id === configuration.default_machine ? "Remove" :"Set" } as default</button>

@@ -8,7 +8,7 @@ mod config;
 use config::{get_config, update_default_machine};
 use clients::{
   aws::search_bucket,
-  paperspace::{list_machines,get_status, is_running}
+  paperspace::{list_machines,get_status, is_running, start_machine, stop_machine}
 };
 fn main() {
 
@@ -19,7 +19,7 @@ fn main() {
   
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
-    search_bucket, list_machines, get_status, is_running, get_config, update_default_machine])
+    search_bucket, list_machines, get_status, is_running, get_config, update_default_machine, start_machine, stop_machine])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
