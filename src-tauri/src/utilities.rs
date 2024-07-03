@@ -5,10 +5,8 @@ use std::{
 
 pub fn load_env() -> Result<(), std::env::VarError>{
     
-    match dotenvy::from_path(path::Path::new("../.env")){
-        Ok(_)=>(),
-        Err(err)=>println!("Your error {}", err)
-    };
+    dotenvy::from_path(path::Path::new("../.env"))
+    .expect("env file shoud exist and have correct permissions");
  
     env::var("AWS_ACCESS_KEY")?;
     env::var("AWS_SECRET_KEY")?;

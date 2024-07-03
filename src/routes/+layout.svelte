@@ -9,6 +9,9 @@
     #side_nav a{
         display: block;
     }
+    #content{
+        width:75%;
+    }
     
 </style>
 
@@ -16,9 +19,9 @@
     <div id="side_nav">
 
         <a href="/">Machines</a>
-        <a href="/repository">Repository</a>
+        <a href="/projects">Projects</a>
     </div>
-    <div>
+    <div id="content">
         <slot></slot>
     </div>
 </div>

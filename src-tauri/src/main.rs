@@ -19,7 +19,9 @@ fn main() {
   
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
-    search_bucket, list_machines, get_status, is_running, get_config, update_default_machine, start_machine, stop_machine])
+    search_bucket, list_machines, get_status, is_running, 
+    get_config, update_default_machine, start_machine, stop_machine
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

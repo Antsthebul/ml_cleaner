@@ -1,26 +1,11 @@
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 
+#[derive(Debug)]
 enum ClientError{
     InitClientError(String)
 }
 
-async fn client(){
-    let bucket_name = "foodenie-ml";
-    let region = "us-east-2".parse().unwrap();
-    
-    match  Credentials::default(){
-        Ok(creds)=>{
-
-            let bucket = Bucket::new(&bucket_name, region, creds).unwrap();
-
-            let results = bucket.list("data/ml_state/base_meta".to_string(), None).await.unwrap();
-            println!("Ok nice {:?}", results);
-
-        }
-        Err(err)=>println!("Error setting credentials: {:?}", err)
-    }
-}
 fn bucket_client()-> Result<Bucket, ClientError>{
     let bucket_name = "foodenie-ml";
     let region = "us-east-2".parse().unwrap();
@@ -32,7 +17,21 @@ fn bucket_client()-> Result<Bucket, ClientError>{
 }
 
 #[tauri::command]
-pub async fn search_bucket(){
-    // bucket_client().unwrap()
+pub async fn search_bucket()->Result<String, String>{
+    let result =  bucket_client().unwrap()
+    .get_object("data/ml_state/current/classes.txt").await;
+
+
+    let data = result.unwrap();
+    
+    let full_text = String::from_utf8(data.into()).unwrap();
+    
+    let text_list = full_text.split("\n").collect::<Vec<&str>>();
+
+    let response = serde_json::json!({
+        "data":text_list
+    });
+
+    Ok(serde_json::to_string(&response).unwrap())
 }
 
