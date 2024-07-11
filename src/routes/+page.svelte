@@ -59,7 +59,7 @@
         configuration = result.data.configuration ?? {}
     }
     async function updateDefaultMachine(machineId:string){
-        await invoke("update_default_machine", {machineId})
+        await invoke("update_configuration_file_command", {machineId})
         await getConfig()
 
     }

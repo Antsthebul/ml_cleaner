@@ -19,7 +19,7 @@ fn bucket_client()-> Result<Bucket, ClientError>{
 #[tauri::command]
 pub async fn search_bucket()->Result<String, String>{
     let result =  bucket_client().unwrap()
-    .get_object("data/ml_state/current/classes.txt").await;
+        .get_object("data/ml_state/current/classes.txt").await;
 
 
     let data = result.unwrap();

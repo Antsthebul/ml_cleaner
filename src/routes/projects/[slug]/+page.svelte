@@ -21,14 +21,29 @@
 
 <script lang="ts">
 	import type { ChangeEventHandler } from 'svelte/elements';
+	import { invoke } from "@tauri-apps/api/tauri";
 
     export let data
+    
+    interface Project {
+        classKey:string|null
+    }
+    
+    const initlocalProject:Project = {
+        classKey:null
+    }
+
 
     $: listOfClasses = data.data.classes ?? []
 
     $: searchText = ''
 
     $: searchableClasses = isTextInClassList(searchText);
+
+    $: allowEditClassesPath = false;
+    $: localProject = initlocalProject;
+
+    $: fileLoadResponse = ""
 
     function isTextInClassList(searchText:string):string[]{
         if (!searchText) return listOfClasses
@@ -38,11 +53,40 @@
         return []
     }
 
+    function setAllowEditClassesPath(val:boolean){
+        allowEditClassesPath = val
+    }
+    async function onSaveUpdatedConfig(){
+
+        if (localProject.classKey){
+
+            localProject.classKey = localProject.classKey.trim()
+        }
+        
+        let result = await invoke("update_configuration_file_command", {file:JSON.stringify(localProject)})
+        console.log("oh ", result)
+        fileLoadResponse = Object.entries(result)[0][1]
+        setAllowEditClassesPath(false)
+    }
+
+
 </script>
 
 <section>
     <h1>Test Project</h1>
-    
+    <div>
+        <span>{fileLoadResponse}</span>
+        <span>Classes Key:</span>
+        
+        {#if allowEditClassesPath}
+            <input bind:value={localProject.classKey}/>
+            <button on:click={onSaveUpdatedConfig}>Save</button>
+            <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
+        {:else}
+        <p>{localProject.classKey ? localProject.classKey :""}</p>
+        <button on:click={()=>setAllowEditClassesPath(true)}>Edit</button>
+        {/if}    
+    </div>
     <div id="main">
 
         <div>

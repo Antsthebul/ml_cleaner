@@ -2,6 +2,28 @@
 #project_section{
     margin-top: 150px;
 }
+
+#pageHeader{
+    display:flex;
+    justify-content: space-between;
+}
+
+#buttonWrapper{
+    align-content: center;
+}
+
+.button{
+    padding:5px;
+    background-color: lightgrey;
+    border: 1px solid black;
+    border-radius:5px
+}
+
+.noLink{
+    color:black;
+    text-decoration: none;
+}
+
 </style>
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
@@ -15,8 +37,14 @@
 </script>
 
 <div>
-    <h1>Repository</h1>
+    <div id="pageHeader">
 
+        <h1>Repository</h1>
+        <div id="buttonWrapper">
+            <a class="button noLink" href="/create-project">Create Project</a>
+        </div>
+    </div>
+    
     <span>Base Folder</span>
     <input bind:value={path}>
     <button>Create</button>
