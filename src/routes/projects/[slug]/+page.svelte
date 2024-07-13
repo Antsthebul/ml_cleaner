@@ -7,7 +7,10 @@
         flex:1
     }
 
-
+    #titleSection{
+        display: flex;
+        justify-content: space-between;
+    }
     .bold{
         font-weight: 700;
     }
@@ -20,10 +23,12 @@
 </style>
 
 <script lang="ts">
-	import type { ChangeEventHandler } from 'svelte/elements';
 	import { invoke } from "@tauri-apps/api/tauri";
     import { page } from "$app/stores";
     import {onMount} from "svelte"
+    import {goto} from "$app/navigation"
+    import {loadProjects, projects} from "../../../store"
+    import type {SimpleSuccessResponse} from "../../../global_types";
 
     export let data
     let slug = $page.params.slug
@@ -67,13 +72,25 @@
         }
         
         let result:string = await invoke("update_configuration_file_command", {file:JSON.stringify(localProject)})
-        console.log("oh ", result)
+
         fileLoadResponse = Object.entries(result)[0][1]
         setAllowEditClassesPath(false)
     }
     async function loadProjectByName(val:string){
         await invoke("get_config_by_project_name", {name:val})
     }
+    async function deleteProject(){
+        let data:string = await invoke("delete_project_by_name", {name:slug})
+        let result:SimpleSuccessResponse = JSON.parse(data)
+        console.log("ugh ", result.data, typeof result, Object.keys(result))
+        if (result.data){
+            projects.update(projects=>projects.filter(proj=>proj.name !== slug))
+            goto("/projects")
+        }else{
+            console.error("Unable to delete project due to ", result)
+        }
+    }
+
     onMount(async ()=>{
         await loadProjectByName(slug)
     })
@@ -81,7 +98,10 @@
 </script>
 
 <section>
-    <h1>{slug}</h1>
+    <div id="titleSection">
+        <h1>{slug}</h1>
+        <button on:click={deleteProject} class="button">Delete</button>
+    </div>
     <div>
         <span>{fileLoadResponse}</span>
         <span>Classes Key:</span>

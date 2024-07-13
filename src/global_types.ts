@@ -7,3 +7,5 @@ export interface ResponseType<T>{
     data: T,
     error:string
 }
+
+export type SimpleSuccessResponse = ResponseType<string>

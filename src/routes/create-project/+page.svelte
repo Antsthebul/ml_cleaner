@@ -2,6 +2,7 @@
     import { invoke } from "@tauri-apps/api/tauri";
     import {goto} from "$app/navigation";
     import type {ResponseType } from "../../global_types";
+    import {loadProjects} from "../../store";
 
     interface NewProject {
         name:string|null,
@@ -25,6 +26,7 @@
         let result:string = await invoke("create_new_project", {project:JSON.stringify(newProject)})
         let response:ResponseType<NewProject> = JSON.parse(result)
         if (response.data){ 
+            await loadProjects()
             goto(`/projects/${newProject.name}`)}
         response.error && console.log("horriable fuckboui dev")
 

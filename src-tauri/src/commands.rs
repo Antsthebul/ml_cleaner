@@ -1,4 +1,4 @@
-use crate::config::{Configuration, Project};
+use crate::{config::{Configuration, Project}, utilities::{serialize_error, serialize_success}};
 use toml;
 
 fn get_configuration_file_for_commands() -> Result<String, String>{
@@ -34,11 +34,11 @@ pub async fn update_configuration_file_command(file:&str)->Result<String, String
 #[tauri::command]
 pub async fn create_new_project(project:&str) -> Result<String, String>{
     let mut config = Configuration::get_configuration_file()
-        .map_err(|err|  serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())?;
+        .map_err(|err| serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())?;
 
     match serde_json::from_str::<Project>(project){
         Ok(project)=>{
-            config.add_project(project);
+            let _ = config.add_project(project);
             if let Err(err) = Configuration::update_configuration_file(config){
                 return Err(serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())
                 
@@ -64,4 +64,20 @@ pub async fn get_config_by_project_name(name:&str)-> Result<String, String>{
         .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
 
     Ok(serde_json::to_string(&serde_json::json!({"data":project})).unwrap())
+}
+
+#[tauri::command]
+pub async fn delete_project_by_name(name:&str)-> Result<String, String>{
+    let mut config = Configuration::get_configuration_file()
+    .map_err(|err| serialize_error(err))?;
+
+    config.projects.remove(name);
+
+    Configuration::update_configuration_file(config)
+    .map_err(|err|serialize_error(err))?;
+
+    Ok(serialize_success("success"))
+
+    
+
 }

@@ -1,7 +1,18 @@
 <style>
 #project_section{
     margin-top: 150px;
+    display: flex;
+    flex-wrap: wrap;
+    gap:5px;
+
+
+    & .projectLink{
+        width: 24%;
+
+
+    }
 }
+
 
 #pageHeader{
     display:flex;
@@ -19,12 +30,14 @@
     border-radius:5px
 }
 
-
+.projectLink{
+    display: block;
+}
 
 </style>
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
-
+    import {projects} from "../../store"
 
     let path:string|null = null;
 
@@ -47,7 +60,9 @@
     <button>Create</button>
 </div>
 <section id="project_section">
-    <a href="/projects/1">
-        <p>Test Project</p>
+    {#each $projects as project}
+    <a href={`/projects/${project.name}`} class="projectLink">
+        <p>{project.name}</p>
     </a>
+    {/each}
 </section>

@@ -20,15 +20,8 @@
     import {invoke} from "@tauri-apps/api/tauri"
     import {writable} from "svelte/store";
     import {onMount} from 'svelte'
-    import {projects} from "../store"
-    import type {ResponseType, Project} from "../global_types"
+    import {loadProjects} from "../store"
 
-    export async function loadProjects(){
-        console.log("Fetching Data for '/' route")
-        let response:string = await invoke("get_all_projects")
-        let result:ResponseType<Project[]> = JSON.parse(response); 
-        projects.set(result.data)
-    }
 
     interface Machine{
         id:string,

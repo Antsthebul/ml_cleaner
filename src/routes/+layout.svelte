@@ -10,15 +10,9 @@
 
 </style>
 <script lang="ts">
-    import '../app.css'
-    import { getContext } from "svelte";
-    import { invoke } from '@tauri-apps/api/tauri';
-    import type {  Project } from '../global_types';
+    import '../app.css';
     import Nav from '../components/Nav.svelte';
 
-    $: projectList = getContext("projects") ?? [] as Project[]
-
-    console.log("oh ", getContext("projects"))
 </script>
 
 <div id="page">
