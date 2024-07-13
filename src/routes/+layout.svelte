@@ -1,38 +1,28 @@
-<style>
+<style lang="scss">
     #page{
         display: flex;
     }
-    #side_nav{
-        width: 25%;
-    }
 
-    #side_nav a{
-        display: block;
-    }
+    
     #content{
         width:75%;
     }
-    
+
 </style>
 <script lang="ts">
-    import { setContext } from "svelte";
-    import {writable} from "svelte/store";
+    import '../app.css'
+    import { getContext } from "svelte";
+    import { invoke } from '@tauri-apps/api/tauri';
+    import type {  Project } from '../global_types';
+    import Nav from '../components/Nav.svelte';
 
-    /**@type {import('./$types').LayoutData}*/
-    export let data;
+    $: projectList = getContext("projects") ?? [] as Project[]
 
-    const projects = writable();
-    $: projects.set(data.projects)
-
-    setContext("projects", projects)
+    console.log("oh ", getContext("projects"))
 </script>
 
 <div id="page">
-    <div id="side_nav">
-
-        <a href="/">Machines</a>
-        <a href="/projects">Projects</a>
-    </div>
+    <Nav/>
     <div id="content">
         <slot></slot>
     </div>

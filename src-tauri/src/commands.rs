@@ -48,3 +48,20 @@ pub async fn create_new_project(project:&str) -> Result<String, String>{
         Err(err)=>Err(serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())
     }
 }
+
+#[tauri::command]
+pub async fn get_all_projects()->Result<String, String>{
+    let config = Configuration::get_all_projects()
+        .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
+    
+    let projects:Vec<&Project> = config.values().collect();
+    Ok(serde_json::to_string(&serde_json::json!({"data":projects})).unwrap())
+}
+
+#[tauri::command]
+pub async fn get_config_by_project_name(name:&str)-> Result<String, String>{
+    let project = Configuration::get_config_by_project_name(name)
+        .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
+
+    Ok(serde_json::to_string(&serde_json::json!({"data":project})).unwrap())
+}

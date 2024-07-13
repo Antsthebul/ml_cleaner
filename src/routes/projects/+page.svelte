@@ -19,10 +19,7 @@
     border-radius:5px
 }
 
-.noLink{
-    color:black;
-    text-decoration: none;
-}
+
 
 </style>
 <script lang="ts">

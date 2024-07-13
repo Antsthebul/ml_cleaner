@@ -23,6 +23,7 @@
 	import type { ChangeEventHandler } from 'svelte/elements';
 	import { invoke } from "@tauri-apps/api/tauri";
     import { page } from "$app/stores";
+    import {onMount} from "svelte"
 
     export let data
     let slug = $page.params.slug
@@ -65,12 +66,17 @@
             localProject.classKey = localProject.classKey.trim()
         }
         
-        let result = await invoke("update_configuration_file_command", {file:JSON.stringify(localProject)})
+        let result:string = await invoke("update_configuration_file_command", {file:JSON.stringify(localProject)})
         console.log("oh ", result)
         fileLoadResponse = Object.entries(result)[0][1]
         setAllowEditClassesPath(false)
     }
-
+    async function loadProjectByName(val:string){
+        await invoke("get_config_by_project_name", {name:val})
+    }
+    onMount(async ()=>{
+        await loadProjectByName(slug)
+    })
 
 </script>
 

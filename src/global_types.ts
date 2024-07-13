@@ -1,5 +1,6 @@
 export interface Project {
-    classKey:string|null
+    name: string
+    classes_file: string
 }
 
 export interface ResponseType<T>{

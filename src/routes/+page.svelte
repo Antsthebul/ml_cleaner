@@ -18,7 +18,17 @@
 <script lang="ts">
 
     import {invoke} from "@tauri-apps/api/tauri"
+    import {writable} from "svelte/store";
     import {onMount} from 'svelte'
+    import {projects} from "../store"
+    import type {ResponseType, Project} from "../global_types"
+
+    export async function loadProjects(){
+        console.log("Fetching Data for '/' route")
+        let response:string = await invoke("get_all_projects")
+        let result:ResponseType<Project[]> = JSON.parse(response); 
+        projects.set(result.data)
+    }
 
     interface Machine{
         id:string,
@@ -31,6 +41,7 @@
     interface Configuration{
         default_machine:string | null
     }
+    
 
     $: runningState = {} as {[key:string]:boolean};
     $: machines = [] as Machine[];
@@ -80,6 +91,7 @@
     onMount(async ()=>{
        await getConfig()
        await listMachines()
+       await loadProjects()
     })
 </script>
 

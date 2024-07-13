@@ -1,4 +1,4 @@
-use std::{fs,fmt, path, str::FromStr, io::{self, prelude::*}};
+use std::{collections::HashMap, fmt, fs, io::{self, prelude::*}, path, str::FromStr};
 use toml;
 use serde::{Deserialize, Serialize};
 
@@ -24,11 +24,11 @@ impl FromStr for ConfigurationKey{
 #[derive(Deserialize, Serialize)]
 pub struct Configuration{
     pub default_machine: Option<String>,
-    pub projects:Vec<Project>
+    pub projects:HashMap<String, Project>
     
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Project{
     pub name: String,
     pub classes_file: Option<String>,
@@ -37,7 +37,7 @@ pub struct Project{
 
 impl fmt::Display for ConfigurationFileError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result{
-        write!(f, "message {}", self.message)
+        write!(f, "message: {}", self.message)
     }
 }
 impl Configuration {
@@ -65,6 +65,22 @@ impl Configuration {
 
     }
 
+    ///Returns complete list of projects
+    /// and its related data
+    pub fn get_all_projects() -> Result<HashMap<String, Project>, ConfigurationFileError>{
+        let config = Configuration::get_configuration_file()?;
+        Ok(config.projects)
+    }
+
+    pub fn get_config_by_project_name(name:&str) -> Result<Project, ConfigurationFileError>{
+        let config = Configuration::get_configuration_file()?;
+        
+        match config.projects.get(&name.to_string()) {
+            Some(project)=>Ok(project.clone()),
+            None=>Err(ConfigurationFileError { message: format!("Configuration with name '{}' does not exist",name) })
+        }
+    }
+
     /// Sets the `machine_id` to the provide str slice
     /// if machine_id=`resetDefaultMachine`, the config
     /// will be set to an empty string
@@ -87,9 +103,16 @@ impl Configuration {
         fs::write("../ml_cleaner.conf", value.as_bytes()).unwrap();
     }
 
-    pub fn add_project(&mut self, p:Project){
-        self.projects.push(p);
-
+    ///Adds a project to configuration. Fails if a config
+    /// exists with the same name
+    pub fn add_project(&mut self, p:Project)-> Result<(), ConfigurationFileError>{
+        match self.projects.get(&p.name){
+            Some(_)=>Err(ConfigurationFileError{message:format!("{} already exists", p.name)}),
+            None=>{
+                self.projects.insert(p.name.to_owned(), p);
+                Ok(())
+            }
+        }
     }
 }
 
@@ -105,7 +128,7 @@ pub fn create_file_if_not_present()-> Result<(),ConfigurationFileError>{
         Ok(false)=>{
             match fs::File::create(file_name){
                 Ok(_)=> {
-                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:Vec::new()})?;
+                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:HashMap::new()})?;
                     println!("{} configuration file was created", file_name);
                     Ok(())
                 },
