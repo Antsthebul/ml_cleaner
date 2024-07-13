@@ -44,6 +44,7 @@
         .then((res:any)=>{
             machines = JSON.parse(res).data
         })
+        .catch((err:any)=>console.error("Failed to list machines due to: ", err))
     }
     function getStatus(){
         invoke("get_status")

@@ -14,6 +14,18 @@
     }
     
 </style>
+<script lang="ts">
+    import { setContext } from "svelte";
+    import {writable} from "svelte/store";
+
+    /**@type {import('./$types').LayoutData}*/
+    export let data;
+
+    const projects = writable();
+    $: projects.set(data.projects)
+
+    setContext("projects", projects)
+</script>
 
 <div id="page">
     <div id="side_nav">

@@ -1,4 +1,4 @@
-use std::{fs, path, str::FromStr, io::{self, prelude::*}};
+use std::{fs,fmt, path, str::FromStr, io::{self, prelude::*}};
 use toml;
 use serde::{Deserialize, Serialize};
 
@@ -23,18 +23,23 @@ impl FromStr for ConfigurationKey{
 }
 #[derive(Deserialize, Serialize)]
 pub struct Configuration{
-    default_machine: Option<String>,
-    projects:Vec<Project>
+    pub default_machine: Option<String>,
+    pub projects:Vec<Project>
     
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Project{
-    name: String,
-    classes_file: Option<String>,
-    info_file:Option<String>
+pub struct Project{
+    pub name: String,
+    pub classes_file: Option<String>,
+    pub info_file:Option<String>
 }
 
+impl fmt::Display for ConfigurationFileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result{
+        write!(f, "message {}", self.message)
+    }
+}
 impl Configuration {
 
     /// Loads a configuration file
@@ -81,11 +86,16 @@ impl Configuration {
 
         fs::write("../ml_cleaner.conf", value.as_bytes()).unwrap();
     }
+
+    pub fn add_project(&mut self, p:Project){
+        self.projects.push(p);
+
+    }
 }
 
 /// Returns the file and bool indicating if the file was created, or returns 
 /// error
-pub fn create_file_if_not_present()-> Result<(),io::Error>{
+pub fn create_file_if_not_present()-> Result<(),ConfigurationFileError>{
     let file_name = "../ml_cleaner.conf";
     match path::Path::new(file_name).try_exists(){
         Ok(true)=>{
@@ -95,13 +105,14 @@ pub fn create_file_if_not_present()-> Result<(),io::Error>{
         Ok(false)=>{
             match fs::File::create(file_name){
                 Ok(_)=> {
+                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:Vec::new()})?;
                     println!("{} configuration file was created", file_name);
                     Ok(())
                 },
-                Err(err)=> return Err(err)
+                Err(err)=> Err(ConfigurationFileError{message:err.to_string()})
             }
         },
-        Err(err)=>Err(err)
+        Err(err)=>Err(ConfigurationFileError{message:err.to_string()})
     }
 }
 

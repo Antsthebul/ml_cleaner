@@ -22,8 +22,10 @@
 <script lang="ts">
 	import type { ChangeEventHandler } from 'svelte/elements';
 	import { invoke } from "@tauri-apps/api/tauri";
+    import { page } from "$app/stores";
 
     export let data
+    let slug = $page.params.slug
     
     interface Project {
         classKey:string|null
@@ -73,7 +75,7 @@
 </script>
 
 <section>
-    <h1>Test Project</h1>
+    <h1>{slug}</h1>
     <div>
         <span>{fileLoadResponse}</span>
         <span>Classes Key:</span>
