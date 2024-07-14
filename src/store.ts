@@ -6,7 +6,12 @@ export const projects = writable([] as Project[]);
 
 export  async function loadProjects(){
     console.log("Fetching Data for '/' route")
-    let response:string = await invoke("get_all_projects")
-    let result:ResponseType<Project[]> = JSON.parse(response); 
-    projects.set(result.data)
+    try{
+
+        let response:string = await invoke("get_all_projects")
+        let result:ResponseType<Project[]> = JSON.parse(response); 
+        projects.set(result.data)
+    }catch(err){
+        console.error("Error loading projects due to ", err)
+    }
 }

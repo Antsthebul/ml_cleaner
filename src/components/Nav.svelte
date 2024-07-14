@@ -20,7 +20,8 @@
 </script>
 <div id="side_nav">
 
-    <a href="/">Machines</a>
+    <a href="/">Home</a>
+    <a href="/machines">Machines</a>
     <a href="/projects">Projects</a>
     {#each $projects as project}
         <a href={`/projects/${project.name}`} class="noLink">&nbsp;{project.name}</a>

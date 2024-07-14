@@ -8,3 +8,10 @@
         cursor: pointer;
     }
 }
+
+.display-block{
+    display: block;
+}
+.mb-5{
+    margin-bottom: 5px;
+}

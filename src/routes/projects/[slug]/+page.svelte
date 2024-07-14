@@ -11,6 +11,16 @@
         display: flex;
         justify-content: space-between;
     }
+    #machine_section{
+        display: flex;
+        justify-content: space-between;
+        height: 75px;
+        margin-top:10px;
+
+        & *{
+            flex:1;
+        }
+    }
     .bold{
         font-weight: 700;
     }
@@ -18,7 +28,17 @@
         height: 200px;
         overflow: hidden;
         border: 1px solid black;
-        padding:5px;
+        padding:0 5px 5px;
+        border-radius:5px;
+        margin-top:5px;
+        overflow-y: scroll;
+    }
+    .errorMessage{
+        color:red;
+        margin-bottom: 0;
+        font-style: italic;
+        font-weight: 500;
+        font-size: .8em;
     }
 </style>
 
@@ -27,38 +47,77 @@
     import { page } from "$app/stores";
     import {onMount} from "svelte"
     import {goto} from "$app/navigation"
-    import {loadProjects, projects} from "../../../store"
-    import type {SimpleSuccessResponse} from "../../../global_types";
+    import {projects} from "../../../store"
+    import type {ResponseType, SimpleSuccessResponse, Project, Machine} from "../../../global_types";
 
-    export let data
+
+    interface ClassData {
+        file_exists: boolean,
+        classes: string[],
+        lastModified:string
+    }
+    interface ProjectDetailResponse{
+        project:Project,
+        class_data: ClassData
+       
+    }
     let slug = $page.params.slug
     
-    interface Project {
-        classKey:string|null
-    }
-    
-    const initlocalProject:Project = {
-        classKey:null
-    }
-
-
-    $: listOfClasses = data.data.classes ?? []
-
     $: searchText = ''
-
+    
+    $: allowEditClassesPath = false;
+    $: localProject = {
+        project:{
+            name:"",
+            classes_file:"",
+            machine:null
+        },
+        class_data:{
+            file_exists:true,
+            classes:[],
+            lastModified:""
+        },
+    } as ProjectDetailResponse;
+    $: fileNameInput = ''
     $: searchableClasses = isTextInClassList(searchText);
 
-    $: allowEditClassesPath = false;
-    $: localProject = initlocalProject;
+    // Used for saerch display purposes
+    $: listOfClasses = localProject.class_data.classes
 
     $: fileLoadResponse = ""
 
-    function isTextInClassList(searchText:string):string[]{
-        if (!searchText) return listOfClasses
-        if (searchText && listOfClasses){
-            return listOfClasses.filter((className:string)=> className.toLowerCase().startsWith(searchText))
+    $: isTextInClassList = (searchText:string):string[]=>{
+        if (!searchText || listOfClasses.length == 0) {
+            return listOfClasses
         }
-        return []
+        let res = listOfClasses.filter((className:string)=> className.toLowerCase().startsWith(searchText)) ??  []
+        return res
+    }
+    $: showMachineListDropDown = false;
+    let machines = [] as Machine[]
+    let selectedMachineIdx = 0;
+    
+    const updateSelectedMachine = () =>{
+        if (selectedMachineIdx > 0 ){
+            localProject.project.machine = machines[selectedMachineIdx-1]
+        };
+    };
+
+
+    async function listMachines(){
+        try{
+
+            let data:string = await invoke("list_machines")
+            let result = JSON.parse(data)
+            if (result.data){
+                machines = result.data
+            }else{
+                console.error("Failed to list machines due to: ", result.error)
+            }
+        }catch(err){
+            console.error("Failed to list machines due to: ", err)
+
+        }
     }
 
     function setAllowEditClassesPath(val:boolean){
@@ -66,23 +125,30 @@
     }
     async function onSaveUpdatedConfig(){
 
-        if (localProject.classKey){
+        console.log("Updating config ", localProject)
+        if (localProject.project.classes_file){
 
-            localProject.classKey = localProject.classKey.trim()
+            localProject.project.classes_file = fileNameInput.trim()
         }
-        
-        let result:string = await invoke("update_configuration_file_command", {file:JSON.stringify(localProject)})
-
+        let result:string = await invoke("update_configuration_file_command", {file:JSON.stringify({default_machine:null, projects:{[localProject.project.name]: localProject.project}})})
+        console.log("oh i see", result)
         fileLoadResponse = Object.entries(result)[0][1]
         setAllowEditClassesPath(false)
     }
+
     async function loadProjectByName(val:string){
-        await invoke("get_config_by_project_name", {name:val})
+        let data:string = await invoke("get_project_by_project_name", {name:val})
+        let result:ResponseType<ProjectDetailResponse> = JSON.parse(data)
+        if (result.data){
+            localProject = result.data
+        }else{
+            console.error("Unable to local project configuration due to: ", result.error)
+        }
     }
+
     async function deleteProject(){
         let data:string = await invoke("delete_project_by_name", {name:slug})
         let result:SimpleSuccessResponse = JSON.parse(data)
-        console.log("ugh ", result.data, typeof result, Object.keys(result))
         if (result.data){
             projects.update(projects=>projects.filter(proj=>proj.name !== slug))
             goto("/projects")
@@ -91,6 +157,16 @@
         }
     }
 
+    async function handleAddMachine(){
+        await listMachines()
+        showMachineListDropDown = true
+    }
+
+    async function handleSaveMachine(){
+        showMachineListDropDown = false
+        updateSelectedMachine()
+        await onSaveUpdatedConfig()
+    }
     onMount(async ()=>{
         await loadProjectByName(slug)
     })
@@ -104,29 +180,71 @@
     </div>
     <div>
         <span>{fileLoadResponse}</span>
-        <span>Classes Key:</span>
+        {#if !localProject.class_data.file_exists}
+        <p class="errorMessage">File does not exist</p>
+        {/if}
+        <span class="display-block mb-5"><b>Machine: </b> {#if !localProject.project.machine}No machine added at this time{/if}</span>
+        {#if !showMachineListDropDown}
+        <button on:click={handleAddMachine}>Add a Machine</button>
+        {:else}
+        <button on:click={handleSaveMachine}>Save</button>
+        <select bind:value={selectedMachineIdx}>
+            <option value={0}></option>
+            {#each machines as machine, i}
+            <option value={i+1}>{machine.name}</option>
+            {/each}
+        </select>
+        {/if}
+        <div id="machine_section">
+            <div>
+                <span class="display-block">ID</span>
+                <span class="display-block">
+
+                    {localProject.project.machine?.id ??""}
+                </span>
+            </div>
+            <div>
+                <span class="display-block">Name</span>
+                {#if localProject.project.machine?.name }
+                <a href={`/machines/${localProject.project.machine.name}`} class="display-block">
+                    {localProject.project.machine.name}
+                </a>
+                {/if}    
+            </div>
+            <div>
+                <span class="display-block">State</span>
+                <span class="display-block">
+                    {localProject.project.machine?.state ??""}
+                </span>    
+            </div>
+        </div>
+        <span class="display-block mb-5"><b>Classes Key/File: </b>{localProject.project.classes_file}</span>
+        <span class="display-block mb-5"><b>Info file: </b></span>
         
         {#if allowEditClassesPath}
-            <input bind:value={localProject.classKey}/>
-            <button on:click={onSaveUpdatedConfig}>Save</button>
-            <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
+            <div>
+
+                <input bind:value={fileNameInput} on:input={()=> localProject.class_data.file_exists = true}/>
+                <button on:click={onSaveUpdatedConfig}>Save</button>
+                <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
+            </div>
         {:else}
-        <p>{localProject.classKey ? localProject.classKey :""}</p>
-        <button on:click={()=>setAllowEditClassesPath(true)}>Edit</button>
+
+            <button on:click={()=>setAllowEditClassesPath(true)} class="display-block">Edit</button>
         {/if}    
     </div>
     <div id="main">
 
         <div>
-            <p>Last Modified: {new Date(data.data.lastModified).toLocaleString()}</p>
+            <p>Last Modified: {localProject.class_data.lastModified ? new Date(localProject.class_data.lastModified).toLocaleString():""}</p>
             <p><span class="bold">Total Trained Classes: </span> {listOfClasses.length}</p>
         </div>
         <div>
-            <input bind:value={searchText} />
+            <input bind:value={searchText} placeholder="Search for an existing class"/>
             <div class="classBox">
                 
                 {#each searchableClasses as className, ix}
-                <p>{ix+1}).{className}</p>
+                <p>{ix+1}). {className}</p>
                 {/each}
             </div>
         </div>

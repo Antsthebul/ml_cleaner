@@ -15,7 +15,8 @@ struct PaperSpaceServerResponse{
 #[derive(Debug)]
 enum RequestType{
     GET,
-    POST,}
+    POST,
+}
 
 struct PaperSpaceClient{
     base_url:&'static str,
@@ -67,13 +68,22 @@ impl PaperSpaceClient{
        .map_err(|err| PaperSpaceClientError(err.to_string()))?;
     
 
-        if response.status() == reqwest::StatusCode::UNAUTHORIZED{
+        match response.status(){
             // Overkill to make a struct for a single property
-            let result = response.json::<PaperSpaceServerResponse>().await.map_err(|err|PaperSpaceClientError(err.to_string()))?;
-            return Err(PaperSpaceClientError(result.message))
+            reqwest::StatusCode::UNAUTHORIZED => {
+                let result = response.json::<PaperSpaceServerResponse>().await.map_err(|err|PaperSpaceClientError(err.to_string()))?;
+                return Err(PaperSpaceClientError(result.message))
+            }
+            reqwest::StatusCode::BAD_REQUEST =>{
+                let result = response.json::<PaperSpaceServerResponse>().await.map_err(|err|PaperSpaceClientError(err.to_string()))?;
+                return Err(PaperSpaceClientError(result.message))
+            },
+            _=>()
         };
-        
-        Ok( response.json::<T>().await.map_err(|err|PaperSpaceClientError(err.to_string()))?)
+        // leave as separate steps for debugging
+        let text = response.text().await.unwrap();
+  
+        Ok( serde_json::from_str(&text).map_err(|err|PaperSpaceClientError(err.to_string()))?)
 
     }
     pub async fn get_machine(self, machine_id:&str)->Result<Machine, PaperSpaceClientError>{
@@ -103,13 +113,13 @@ impl PaperSpaceClient{
 
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Machine{
+pub struct Machine{
     id:String,
     name:String,
     state: String,
-    machine_type:String
+    machine_type:String,
 }
 
 #[derive(Deserialize, Serialize)]

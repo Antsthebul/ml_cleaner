@@ -1,4 +1,6 @@
-use crate::{config::{Configuration, Project}, utilities::{serialize_error, serialize_success}};
+use std::collections::HashMap;
+
+use crate::{clients::aws::get_classes_data, config::{Configuration, Project}, utilities::{serialize_error, serialize_success}};
 use toml;
 
 fn get_configuration_file_for_commands() -> Result<String, String>{
@@ -19,7 +21,7 @@ pub async fn get_config()->Result<String, String>{
 
 #[tauri::command]
 pub async fn update_configuration_file_command(file:&str)->Result<String, String>{
-
+    println!("Updating configuration file");
     match  toml::from_str::<Configuration>(file){
         Ok(config)=>{
             if let Err(err)= Configuration::update_configuration_file(config){
@@ -27,7 +29,7 @@ pub async fn update_configuration_file_command(file:&str)->Result<String, String
             };
             Ok(serde_json::to_string(&serde_json::json!({"data":"success"})).unwrap())
         },
-        Err(err)=>Ok(serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())
+        Err(err)=>Err(serialize_error(err))
         }   
 }
 
@@ -59,11 +61,24 @@ pub async fn get_all_projects()->Result<String, String>{
 }
 
 #[tauri::command]
-pub async fn get_config_by_project_name(name:&str)-> Result<String, String>{
-    let project = Configuration::get_config_by_project_name(name)
-        .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
+pub async fn get_project_by_project_name(name:&str)-> Result<String, String>{
+    let project = Configuration::get_project_by_project_name(name)
+        .map_err(|err|serialize_error(err.to_string()))?;
+    
+    let file_path = match &project.classes_file{
+        Some(file) => file,
+        None=>{return Ok(serialize_success(serde_json::json!({"project":project, "class_data":HashMap::<String, String>::new()})))}
+    };
 
-    Ok(serde_json::to_string(&serde_json::json!({"data":project})).unwrap())
+    let class_data = get_classes_data(file_path).await
+    .map_err(|err|serialize_error(err.to_string()))?;
+
+    let return_data = serde_json::json!(
+        {"data":
+            {"project":project,
+            "class_data":class_data
+        }});
+    Ok(serde_json::to_string(&return_data).unwrap())
 }
 
 #[tauri::command]
@@ -77,7 +92,5 @@ pub async fn delete_project_by_name(name:&str)-> Result<String, String>{
     .map_err(|err|serialize_error(err))?;
 
     Ok(serialize_success("success"))
-
-    
 
 }

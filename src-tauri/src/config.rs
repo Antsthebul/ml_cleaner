@@ -2,6 +2,8 @@ use std::{collections::HashMap, fmt, fs, io::{self, prelude::*}, path, str::From
 use toml;
 use serde::{Deserialize, Serialize};
 
+use crate::clients::paperspace::Machine;
+
 #[derive(Debug)]
 pub struct ConfigurationFileError{
     pub message:String
@@ -32,7 +34,8 @@ pub struct Configuration{
 pub struct Project{
     pub name: String,
     pub classes_file: Option<String>,
-    pub info_file:Option<String>
+    pub info_file:Option<String>,
+    pub machine: Option<Machine>
 }
 
 impl fmt::Display for ConfigurationFileError {
@@ -72,7 +75,7 @@ impl Configuration {
         Ok(config.projects)
     }
 
-    pub fn get_config_by_project_name(name:&str) -> Result<Project, ConfigurationFileError>{
+    pub fn get_project_by_project_name(name:&str) -> Result<Project, ConfigurationFileError>{
         let config = Configuration::get_configuration_file()?;
         
         match config.projects.get(&name.to_string()) {

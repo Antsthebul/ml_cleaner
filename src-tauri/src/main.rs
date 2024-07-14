@@ -7,7 +7,7 @@ mod config;
 mod commands;
 
 use config::create_file_if_not_present;
-use commands::{get_config, update_configuration_file_command, create_new_project, get_all_projects, get_config_by_project_name,
+use commands::{get_config, update_configuration_file_command, create_new_project, get_all_projects, get_project_by_project_name,
    delete_project_by_name};
 use clients::{
   aws::search_bucket,
@@ -31,7 +31,7 @@ fn main() {
   .invoke_handler(tauri::generate_handler![
     search_bucket, list_machines, get_status, is_running, 
     get_config,update_configuration_file_command, start_machine, stop_machine, create_new_project,
-    get_all_projects, get_config_by_project_name, delete_project_by_name
+    get_all_projects, get_project_by_project_name, delete_project_by_name
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

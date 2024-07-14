@@ -1,6 +1,7 @@
 export interface Project {
     name: string
-    classes_file: string
+    classes_file: string,
+    machine: Machine | null
 }
 
 export interface ResponseType<T>{
@@ -9,3 +10,9 @@ export interface ResponseType<T>{
 }
 
 export type SimpleSuccessResponse = ResponseType<string>
+
+export interface Machine{
+    id:string,
+    state:string,
+    name:string
+}
