@@ -22,7 +22,7 @@ pub async fn get_config()->Result<String, String>{
 #[tauri::command]
 pub async fn update_configuration_file_command(file:&str)->Result<String, String>{
     println!("Updating configuration file");
-    match  toml::from_str::<Configuration>(file){
+    match  serde_json::from_str::<Configuration>(file){
         Ok(config)=>{
             if let Err(err)= Configuration::update_configuration_file(config){
                 return Ok(serde_json::to_string(&serde_json::json!({"error":format!("Unable to save file: {:#?}", err)})).unwrap())

@@ -22,6 +22,7 @@ struct PaperSpaceClient{
     base_url:&'static str,
     client:reqwest::Client
 }
+
 impl std::str::FromStr for RequestType{
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {

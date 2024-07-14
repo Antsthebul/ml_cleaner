@@ -1,7 +1,7 @@
 export interface Project {
     name: string
     classes_file: string,
-    machine: Machine | null
+    machine: ProjectMachine | null
 }
 
 export interface ResponseType<T>{
@@ -11,8 +11,14 @@ export interface ResponseType<T>{
 
 export type SimpleSuccessResponse = ResponseType<string>
 
+type ModifiedMachine = Omit<Machine, 'machineType'|'state'>;
+export interface ProjectMachine extends ModifiedMachine{
+    machine_type: string
+}
+/** Machine returned by server*/  
 export interface Machine{
     id:string,
-    state:string,
-    name:string
+    name:string,
+    machineType:string,
+    state:string
 }

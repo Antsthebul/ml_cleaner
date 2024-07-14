@@ -70,9 +70,13 @@ pub async fn get_classes_data(obj_path:&str)-> Result<ClassData,AWSClientError>{
     match data {
         Ok(json_data)=>{
             let headers =  json_data.headers();
-            let last_modified = headers.get("last-modified").unwrap().to_owned();
+            println!("{:?}", headers);
+            let last_modified =match headers.get("last-modified"){
+                Some(val)=>val,
+                None=>""
+            };
             let text_list =  String::from_utf8(json_data.into()).unwrap();
-            Ok(ClassData{file_exists:true,last_modified, classes: text_list.split("\n").map(|v|v.to_string()).collect::<Vec<String>>()})
+            Ok(ClassData{file_exists:true,last_modified:last_modified.to_owned(), classes: text_list.split("\n").map(|v|v.to_string()).collect::<Vec<String>>()})
         },
         Err(_)=>{
 

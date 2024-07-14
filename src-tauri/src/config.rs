@@ -2,7 +2,6 @@ use std::{collections::HashMap, fmt, fs, io::{self, prelude::*}, path, str::From
 use toml;
 use serde::{Deserialize, Serialize};
 
-use crate::clients::paperspace::Machine;
 
 #[derive(Debug)]
 pub struct ConfigurationFileError{
@@ -23,7 +22,14 @@ impl FromStr for ConfigurationKey{
         }
     }
 }
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct ProjectMachine{
+    id:String,
+    name:String,
+    machine_type:String
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Configuration{
     pub default_machine: Option<String>,
     pub projects:HashMap<String, Project>
@@ -35,7 +41,7 @@ pub struct Project{
     pub name: String,
     pub classes_file: Option<String>,
     pub info_file:Option<String>,
-    pub machine: Option<Machine>
+    pub machine: Option<ProjectMachine>
 }
 
 impl fmt::Display for ConfigurationFileError {

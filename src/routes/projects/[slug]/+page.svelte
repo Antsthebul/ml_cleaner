@@ -48,7 +48,7 @@
     import {onMount} from "svelte"
     import {goto} from "$app/navigation"
     import {projects} from "../../../store"
-    import type {ResponseType, SimpleSuccessResponse, Project, Machine} from "../../../global_types";
+    import type {ResponseType, SimpleSuccessResponse, Project, Machine, ProjectMachine} from "../../../global_types";
 
 
     interface ClassData {
@@ -78,7 +78,7 @@
             lastModified:""
         },
     } as ProjectDetailResponse;
-    $: fileNameInput = ''
+    let fileNameInput = localProject?.project.classes_file
     $: searchableClasses = isTextInClassList(searchText);
 
     // Used for saerch display purposes
@@ -99,7 +99,14 @@
     
     const updateSelectedMachine = () =>{
         if (selectedMachineIdx > 0 ){
-            localProject.project.machine = machines[selectedMachineIdx-1]
+            let server_machine = machines[selectedMachineIdx-1]
+            let machine: ProjectMachine = {
+                id:server_machine.id,
+                name:server_machine.name,
+                machine_type:server_machine.machineType
+            }
+            
+            localProject.project.machine = machine
         };
     };
 
@@ -125,8 +132,8 @@
     }
     async function onSaveUpdatedConfig(){
 
-        console.log("Updating config ", localProject)
-        if (localProject.project.classes_file){
+        console.log("Updating config ", localProject, fileNameInput)
+        if (fileNameInput){
 
             localProject.project.classes_file = fileNameInput.trim()
         }
@@ -167,6 +174,12 @@
         updateSelectedMachine()
         await onSaveUpdatedConfig()
     }
+
+    function handleFileNameInput(e:any){
+        console.log("type")
+        localProject.class_data.file_exists = true
+        fileNameInput = e.target.value
+    }
     onMount(async ()=>{
         await loadProjectByName(slug)
     })
@@ -197,6 +210,14 @@
         {/if}
         <div id="machine_section">
             <div>
+                <button class="display-block mt-5" disabled={!localProject.project.machine}>Start</button>
+                {#if localProject.project.machine}
+                <button class="display-block">Stop</button>
+                <button class="display-block">Train</button>
+                {/if}
+            </div>
+            
+            <div>
                 <span class="display-block">ID</span>
                 <span class="display-block">
 
@@ -211,12 +232,12 @@
                 </a>
                 {/if}    
             </div>
-            <div>
+            <!-- <div>
                 <span class="display-block">State</span>
                 <span class="display-block">
                     {localProject.project.machine?.state ??""}
                 </span>    
-            </div>
+            </div> -->
         </div>
         <span class="display-block mb-5"><b>Classes Key/File: </b>{localProject.project.classes_file}</span>
         <span class="display-block mb-5"><b>Info file: </b></span>
@@ -224,7 +245,7 @@
         {#if allowEditClassesPath}
             <div>
 
-                <input bind:value={fileNameInput} on:input={()=> localProject.class_data.file_exists = true}/>
+                <input bind:value={fileNameInput} on:input={handleFileNameInput}/>
                 <button on:click={onSaveUpdatedConfig}>Save</button>
                 <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
             </div>

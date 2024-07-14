@@ -20,7 +20,6 @@
     import {invoke} from "@tauri-apps/api/tauri"
     import {writable} from "svelte/store";
     import {onMount} from 'svelte'
-    import {loadProjects} from "../../store"
     import type {Machine} from "../../global_types"
 
 
@@ -86,7 +85,7 @@
     onMount(async ()=>{
        await getConfig()
        await listMachines()
-       await loadProjects()
+
     })
 </script>
 

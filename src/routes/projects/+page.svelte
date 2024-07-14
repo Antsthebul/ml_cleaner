@@ -37,13 +37,18 @@
 </style>
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
-    import {projects} from "../../store"
+    import {projects, loadProjects} from "../../store"
+    import { onMount } from "svelte";
 
     let path:string|null = null;
 
     function checkIfPathExists(path:string){
         invoke("check_if_path_exists",{ path})
     }
+
+    onMount(async ()=>{
+        await loadProjects()
+    })
 </script>
 
 <div>
