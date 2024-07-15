@@ -1,16 +1,34 @@
+use ssh2::Session;
 use reqwest::{self, header};
 use s3::request;
-use std::{env, fmt};
+use std::{env, fmt, net::{Ipv4Addr, TcpStream}};
 use serde::{self, Deserialize, Serialize,
 de::DeserializeOwned};
 
+use crate::clients::file_config::Configuration;
 struct PaperSpaceClientError(String);
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Machine{
+    id:String,
+    name:String,
+    state: String,
+    machine_type:String,
+    public_ip_address: Option<Ipv4Addr>
+}
+
+#[derive(Deserialize, Serialize)]
+struct Machines{
+    machines:Vec<Machine>
+}
 
 #[derive(Deserialize)]
 struct PaperSpaceServerResponse{
     status: u16,
     message:String
 }
+
 
 #[derive(Debug)]
 enum RequestType{
@@ -83,13 +101,12 @@ impl PaperSpaceClient{
         };
         // leave as separate steps for debugging
         let text = response.text().await.unwrap();
-  
+        println!("cry{}", text);
         Ok( serde_json::from_str(&text).map_err(|err|PaperSpaceClientError(err.to_string()))?)
 
     }
-    pub async fn get_machine(self, machine_id:&str)->Result<Machine, PaperSpaceClientError>{
-        let mut url = self.base_url.to_owned();
-        url.push_str(&format!("/getMachinePublic?machineId={}",machine_id));
+    pub async fn get_machine_by_machine_id(self, machine_id:&str)->Result<Machine, PaperSpaceClientError>{
+        let url = format!("{}/getMachinePublic?machineId={machine_id}",self.base_url);
 
         Ok(self.make_request::<Machine>(url, "get".parse().unwrap()).await?)
     }
@@ -112,70 +129,44 @@ impl PaperSpaceClient{
         Ok(())
     }
 
+    pub async fn get_machine_status(self, project_name:&str, machine_id:&str) -> Result<Machine, PaperSpaceClientError>{
+        let url = format!("{}/getMachinePublic?machineId={machine_id}", self.base_url);
+
+        let response = self.make_request::<Machine>(url, "get".parse().unwrap()).await?;
+        println!("wtf {} ", response);
+        let config = Configuration::get_configuration_file().map_err(|err|PaperSpaceClientError(err.to_string()))?;
+        let mut project = Configuration::get_project_by_project_name(project_name).map_err(|err|PaperSpaceClientError(err.to_string()))?;
+
+        if let Some(mut machine) = project.machine{
+            if let Some(ip_addr) = response.public_ip_address{
+                println!("attr exists!");
+                machine.ip_addr = Some(ip_addr);
+                project.machine = Some(machine);
+            };
+        };
+        Configuration::update_configuration_file(config)
+            .map_err(|err|PaperSpaceClientError(err.to_string()))?;
+        Ok(response)
+    }
+
+    pub async fn train_model(self, ip_address:Ipv4Addr) ->  Result<serde_json::value::Value, PaperSpaceClientError>{
+        let mut  session = Session::new()
+            .map_err(|err|PaperSpaceClientError(err.to_string()))?;
+
+        let tcp = TcpStream::connect(ip_address.to_string()).map_err(|err|PaperSpaceClientError(err.to_string()))?;
+        
+        session.set_tcp_stream(tcp);
+        session.userauth_agent("bulofants").map_err(|err|PaperSpaceClientError(err.to_string()))?;
+
+        Ok(serde_json::json!({"ok":"not done"}))
+    }
+
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Machine{
-    id:String,
-    name:String,
-    state: String,
-    machine_type:String,
-}
 
-#[derive(Deserialize, Serialize)]
-struct Machines{
-    machines:Vec<Machine>
-}
 
-#[tauri::command]
-pub async fn get_status(){
-
-}
-
-async fn get_machine_status(machine_id:String)->Result<Machine, PaperSpaceClientError>{
-    let pc = PaperSpaceClient::new();
-    Ok(pc.get_machine(&machine_id).await?)
-
-}
-
-#[tauri::command]
-pub async fn is_running(machine_id:&str)-> Result<String, String>{
-    let machine = get_machine_status(machine_id.to_string()).await
-        .map_err(|err| serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
-    let res = machine.state == "ready";
-
-    let response = serde_json::json!({"data":res});
-    Ok(serde_json::to_string(&response).unwrap())
-}
-
-#[tauri::command]
-pub async fn list_machines()-> Result<String, String>{
-    let pc = PaperSpaceClient::new();
-    let machines = pc.get_machines().await
-    .map_err(|err| serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
-
-    let response = serde_json::json!({"data":machines});
-    Ok(serde_json::to_string(&response).unwrap())
-}
-
-#[tauri::command]
-pub async fn start_machine(machine_id:&str) -> Result<String, String>{
-    let pc = PaperSpaceClient::new();
-    let  _ = pc.handle_machine_run_state(machine_id, "start").await
-        .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
-
-    let response = serde_json::json!({"data":"success"});
-
-    Ok(serde_json::to_string(&response).unwrap())
-}
-
-#[tauri::command]
-pub async fn stop_machine(machine_id:&str) -> Result<String, String>{
-    let pc = PaperSpaceClient::new();
-    pc.handle_machine_run_state(machine_id, "stop").await;
-
-    let response = serde_json::json!({"data":"success"});
-
-    Ok(serde_json::to_string(&response).unwrap())
+impl fmt::Display for Machine{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"{:?}", self)
+    }
 }

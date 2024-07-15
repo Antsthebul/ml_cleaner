@@ -1,0 +1,122 @@
+{
+    "id": "ps146829eprd",
+    "name": "Foodenie ML",
+    "os": "",
+    "ram": "48318382080",
+    "cpus": 8,
+    "gpu": "Ampere A4000",
+    "storageTotal": "53687091200",
+    "storageUsed": "110080",
+    "machineType": "A4000",
+    "usageRate": "A4000 hourly",
+    "shutdownTimeoutInHours": null,
+    "shutdownTimeoutForces": false,
+    "performAutoSnapshot": true,
+    "autoSnapshotFrequency": "hour",
+    "autoSnapshotSaveCount": 1,
+    "dynamicPublicIp": true,
+    "agentType": "LinuxHeadless",
+    "dtCreated": "2024-01-20T20:22:00.992Z",
+    "state": "off",
+    "updatesPending": false,
+    "networkId": "nng82wb",
+    "privateIpAddress": "10.64.1.147",
+    "publicIpAddress": null,
+    "region": "East Coast (NY2)",
+    "scriptId": null,
+    "dtLastRun": null,
+    "restorePointSnapshotId": null,
+    "restorePointFrequency": null,
+    "events": [
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "9698a5df-249a-47b5-9f52-01b7641e6086",
+            "dtModified": "2024-05-08T03:49:15.166Z",
+            "dtFinished": "2024-05-08T03:49:15.166Z",
+            "dtCreated": "2024-05-08T03:48:56.361Z"
+        },
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "5f9e8d4f-f6fa-4a93-91d4-9529c28350a8",
+            "dtModified": "2024-05-08T02:47:52.008Z",
+            "dtFinished": "2024-05-08T02:47:52.008Z",
+            "dtCreated": "2024-05-08T02:47:20.546Z"
+        },
+        {
+            "name": "stop",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "69209b8b-077e-4e75-bd05-501609b2587c",
+            "dtModified": "2024-05-08T02:47:37.405Z",
+            "dtFinished": "2024-05-08T02:47:37.405Z",
+            "dtCreated": "2024-05-08T02:47:16.176Z"
+        },
+        {
+            "name": "start",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "f70e9543-61bb-4b44-bbbe-e4a5768cd58c",
+            "dtModified": "2024-05-08T02:44:07.421Z",
+            "dtFinished": "2024-05-08T02:44:07.421Z",
+            "dtCreated": "2024-05-08T02:43:33.864Z"
+        },
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "50a98f5e-68bb-4e9a-adaf-45eb34d8ac14",
+            "dtModified": "2024-05-05T01:43:54.737Z",
+            "dtFinished": "2024-05-05T01:43:54.737Z",
+            "dtCreated": "2024-05-05T01:43:36.793Z"
+        },
+        {
+            "name": "stop",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "914fb197-fe2e-4d25-81e7-ab018e15d297",
+            "dtModified": "2024-05-05T01:31:50.526Z",
+            "dtFinished": "2024-05-05T01:31:50.526Z",
+            "dtCreated": "2024-05-05T01:31:25.981Z"
+        },
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "56a74387-227a-42b4-b276-fed5b06b902a",
+            "dtModified": "2024-05-05T00:42:18.538Z",
+            "dtFinished": "2024-05-05T00:42:18.538Z",
+            "dtCreated": "2024-05-05T00:42:01.866Z"
+        },
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "c8846a39-f415-45d7-929a-f79c68cf1e7f",
+            "dtModified": "2024-05-04T23:40:39.786Z",
+            "dtFinished": "2024-05-04T23:40:39.786Z",
+            "dtCreated": "2024-05-04T23:40:26.702Z"
+        },
+        {
+            "name": "start",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "29cccfcf-db61-4d8a-b80b-9f1cf8505bb7",
+            "dtModified": "2024-05-04T23:36:03.048Z",
+            "dtFinished": "2024-05-04T23:36:03.048Z",
+            "dtCreated": "2024-05-04T23:35:36.057Z"
+        },
+        {
+            "name": "snapshot-create",
+            "state": "done",
+            "errorMsg": "",
+            "handle": "755e347a-4563-4938-b4a5-666606c0b6b3",
+            "dtModified": "2024-01-28T06:56:25.220Z",
+            "dtFinished": "2024-01-28T06:56:25.220Z",
+            "dtCreated": "2024-01-28T06:55:57.825Z"
+        }
+    ]
+}

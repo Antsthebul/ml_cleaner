@@ -4,15 +4,16 @@
 mod utilities;
 mod clients;
 mod config;
-mod commands;
+mod adapters;
 
-use config::create_file_if_not_present;
-use commands::{get_config, update_configuration_file_command, create_new_project, get_all_projects, get_project_by_project_name,
-   delete_project_by_name};
-use clients::{
-  aws::search_bucket,
-  paperspace::{list_machines,get_status, is_running, start_machine, stop_machine}
-};
+use app::clients::{aws::get_classes_data, file_config};
+
+// use commands::{get_config, update_configuration_file_command, create_new_project, get_all_projects, get_project_by_project_name,
+//    delete_project_by_name};
+// use app::{
+//   aws::search_bucket,
+//   paperspace::{list_machines,get_machine_by_machine_id, get_machine_status, start_machine, stop_machine, train_model}
+// };
 fn main() {
 
   // Startup functions
@@ -21,7 +22,7 @@ fn main() {
   }
 
 
-  if let Err(err) = create_file_if_not_present(){
+  if let Err(err) =file_config::create_file_if_not_present(){
     println!("Unable to create file due to {}", err)
   }
 
@@ -29,9 +30,9 @@ fn main() {
   
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
-    search_bucket, list_machines, get_status, is_running, 
-    get_config,update_configuration_file_command, start_machine, stop_machine, create_new_project,
-    get_all_projects, get_project_by_project_name, delete_project_by_name
+    // search_bucket, list_machines, get_machine_by_machine_id, get_machine_status, 
+    // get_config,update_configuration_file_command, start_machine, stop_machine, create_new_project,
+    // get_all_projects, get_project_by_project_name, delete_project_by_name, train_model
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{clients::aws::get_classes_data, config::{Configuration, Project}, utilities::{serialize_error, serialize_success}};
-use toml;
+
 
 fn get_configuration_file_for_commands() -> Result<String, String>{
     match Configuration::get_configuration_file(){
@@ -10,7 +10,7 @@ fn get_configuration_file_for_commands() -> Result<String, String>{
             let success_response = serde_json::json!({"data":{"configuration":config}});   
             Ok(serde_json::to_string(&success_response).unwrap())
         }
-        Err(err)=> Ok(serde_json::to_string(err.message.as_str()).unwrap())
+        Err(err)=> Ok(serialize_error(err))
     }
     }
 #[tauri::command]
@@ -25,9 +25,9 @@ pub async fn update_configuration_file_command(file:&str)->Result<String, String
     match  serde_json::from_str::<Configuration>(file){
         Ok(config)=>{
             if let Err(err)= Configuration::update_configuration_file(config){
-                return Ok(serde_json::to_string(&serde_json::json!({"error":format!("Unable to save file: {:#?}", err)})).unwrap())
+                return Ok(serialize_error(format!("Unable to save file: {:#?}", err)))
             };
-            Ok(serde_json::to_string(&serde_json::json!({"data":"success"})).unwrap())
+            Ok(serialize_success("success"))
         },
         Err(err)=>Err(serialize_error(err))
         }   
@@ -36,25 +36,25 @@ pub async fn update_configuration_file_command(file:&str)->Result<String, String
 #[tauri::command]
 pub async fn create_new_project(project:&str) -> Result<String, String>{
     let mut config = Configuration::get_configuration_file()
-        .map_err(|err| serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())?;
+        .map_err(|err| serialize_error(err))?;
 
     match serde_json::from_str::<Project>(project){
         Ok(project)=>{
             let _ = config.add_project(project);
             if let Err(err) = Configuration::update_configuration_file(config){
-                return Err(serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())
+                return Err(serialize_error(err))
                 
             };
-            Ok(serde_json::to_string(&serde_json::json!({"data":"ok"})).unwrap())
+            Ok(serialize_success("ok"))
         },
-        Err(err)=>Err(serde_json::to_string(&serde_json::json!({"error":err.to_string().as_str()})).unwrap())
+        Err(err)=>Err(serialize_error(err))
     }
 }
 
 #[tauri::command]
 pub async fn get_all_projects()->Result<String, String>{
     let config = Configuration::get_all_projects()
-        .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
+        .map_err(|err|serialize_error(err))?;
     
     let projects:Vec<&Project> = config.values().collect();
     Ok(serde_json::to_string(&serde_json::json!({"data":projects})).unwrap())
@@ -63,7 +63,7 @@ pub async fn get_all_projects()->Result<String, String>{
 #[tauri::command]
 pub async fn get_project_by_project_name(name:&str)-> Result<String, String>{
     let project = Configuration::get_project_by_project_name(name)
-        .map_err(|err|serialize_error(err.to_string()))?;
+        .map_err(|err|serialize_error(err))?;
     
     let file_path = match &project.classes_file{
         Some(file) => file,

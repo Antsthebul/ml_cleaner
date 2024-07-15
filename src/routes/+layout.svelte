@@ -11,7 +11,18 @@
 </style>
 <script lang="ts">
     import '../app.css';
-    import Nav from '../components/Nav.svelte';
+    import { Nav } from '$lib';
+    import {onMount} from 'svelte'
+    import {loadProjects} from '../store'
+
+    onMount(async ()=>{
+        try{
+
+            await loadProjects()
+        }catch(err){
+            console.error(`[Home] Failed to load projects due to the following '${err}'`)
+        }
+    })
 
 </script>
 

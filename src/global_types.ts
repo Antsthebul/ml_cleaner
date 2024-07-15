@@ -13,12 +13,21 @@ export type SimpleSuccessResponse = ResponseType<string>
 
 type ModifiedMachine = Omit<Machine, 'machineType'|'state'>;
 export interface ProjectMachine extends ModifiedMachine{
-    machine_type: string
+    machine_type: string,
+    ip_addr:string|null
 }
 /** Machine returned by server*/  
 export interface Machine{
     id:string,
     name:string,
     machineType:string,
-    state:string
+    state:string,
+    ip_addr:string|null
+}
+
+export interface ConfigurationResponse{
+    configuration:Configuration
+}
+export interface Configuration{
+    default_machine:string | null
 }

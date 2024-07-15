@@ -4,14 +4,24 @@ import type { ResponseType, Project } from "./global_types";
 
 export const projects = writable([] as Project[]);
 
+class APIError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DatabaseError';
+    }
+  }
+  
 export  async function loadProjects(){
-    console.log("Fetching Data for '/' route")
+    console.log("Loading All Projects")
     try{
 
         let response:string = await invoke("get_all_projects")
         let result:ResponseType<Project[]> = JSON.parse(response); 
-        projects.set(result.data)
+        if (result.data){
+            projects.set(result.data)
+        }
+        throw new APIError(result.error)
     }catch(err){
-        console.error("Error loading projects due to ", err)
+        throw err
     }
 }

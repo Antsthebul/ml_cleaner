@@ -103,7 +103,8 @@
             let machine: ProjectMachine = {
                 id:server_machine.id,
                 name:server_machine.name,
-                machine_type:server_machine.machineType
+                machine_type:server_machine.machineType,
+                ip_addr:server_machine.ip_addr
             }
             
             localProject.project.machine = machine
@@ -176,9 +177,12 @@
     }
 
     function handleFileNameInput(e:any){
-        console.log("type")
         localProject.class_data.file_exists = true
         fileNameInput = e.target.value
+    }
+    async function trainModel(){
+        let response = await invoke("train_model", {projectName:localProject.project.name, })
+        console.log("train cool ", response)
     }
     onMount(async ()=>{
         await loadProjectByName(slug)
@@ -213,7 +217,7 @@
                 <button class="display-block mt-5" disabled={!localProject.project.machine}>Start</button>
                 {#if localProject.project.machine}
                 <button class="display-block">Stop</button>
-                <button class="display-block">Train</button>
+                <button class="display-block" on:click={trainModel} disabled={!localProject.project.machine.ip_addr}>Train</button>
                 {/if}
             </div>
             

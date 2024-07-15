@@ -13,8 +13,7 @@
     }   
 </style>
 <script lang="ts">
-    import type {  Project } from '../global_types';
-    import {projects} from "../store"
+    import {projects} from "../../../store"
 
 
 </script>
