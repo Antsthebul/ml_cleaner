@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/tauri";
-import type { ResponseType, Project } from "./global_types";
+import type { ResponseType, Project } from "$lib/global_types";
 
 export const projects = writable([] as Project[]);
 

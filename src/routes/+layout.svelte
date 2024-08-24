@@ -14,10 +14,13 @@
     import { Nav } from '$lib';
     import {onMount} from 'svelte'
     import {loadProjects} from '../store'
+    import ConfigAPI from '$lib/api/ConfigAPI';
 
     onMount(async ()=>{
         try{
 
+            let res = await ConfigAPI.getConfig()
+            console.log("Got config ", res)
             await loadProjects()
         }catch(err){
             console.error(`[Home] Failed to load projects due to the following '${err}'`)

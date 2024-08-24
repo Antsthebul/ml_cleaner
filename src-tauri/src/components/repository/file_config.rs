@@ -28,20 +28,34 @@ pub struct ProjectMachine{
     machine_type:String,
     pub ip_addr: Option<net::Ipv4Addr>
 }
-
+/// Root of configuration
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Configuration{
     pub default_machine: Option<String>,
-    pub projects:HashMap<String, Project>
+    pub projects:Vec<Project>
     
+}
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Environment {
+    pub name: String,
+    pub classes_file: Option<String>,
+    pub info_file:Option<String>,
+    pub machine: Option<ProjectMachine>
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Project{
     pub name: String,
-    pub classes_file: Option<String>,
-    pub info_file:Option<String>,
-    pub machine: Option<ProjectMachine>
+    pub envs: Vec<Environment>
+}
+impl Project{
+    pub fn get_project_environment(&self, env_name:&str)->Result<Environment, ConfigurationFileError>{
+        match self.envs.iter().find(|&env|env.name == env_name){
+            Some(environ)=> Ok(environ.to_owned()),
+            None=> Err(ConfigurationFileError(format!("'{env_name}' does not exist for {}", self.name)))
+        }
+
+    }
 }
 
 impl fmt::Display for ConfigurationFileError {
@@ -76,17 +90,17 @@ impl Configuration {
 
     ///Returns complete list of projects
     /// and its related data
-    pub fn get_all_projects() -> Result<HashMap<String, Project>, ConfigurationFileError>{
+    pub fn get_all_projects() -> Result<Vec<Project>, ConfigurationFileError>{
         let config = Configuration::get_configuration_file()?;
         Ok(config.projects)
     }
 
-    pub fn get_project_by_project_name(name:&str) -> Result<Project, ConfigurationFileError>{
+    pub fn get_project_by_project_name(project_name:&str) -> Result<Project, ConfigurationFileError>{
         let config = Configuration::get_configuration_file()?;
         
-        match config.projects.get(&name.to_string()) {
+        match config.projects.iter().find(|&proj| project_name == &proj.name) {
             Some(project)=>Ok(project.clone()),
-            None=>Err(ConfigurationFileError(format!("Configuration with name '{}' does not exist",name)))
+            None=>Err(ConfigurationFileError(format!("Configuration with name '{}' does not exist",project_name)))
         }
     }
 
@@ -112,13 +126,13 @@ impl Configuration {
         fs::write("../ml_cleaner.conf", value.as_bytes()).unwrap();
     }
 
-    ///Adds a project to configuration. Fails if a config
+    /// Adds a project to configuration. Fails if a config
     /// exists with the same name
     pub fn add_project(&mut self, p:Project)-> Result<(), ConfigurationFileError>{
-        match self.projects.get(&p.name){
+        match self.projects.iter().find(|&proj| proj.name == p.name){
             Some(_)=>Err(ConfigurationFileError(format!("{} already exists", p.name))),
             None=>{
-                self.projects.insert(p.name.to_owned(), p);
+                self.projects.push(p);
                 Ok(())
             }
         }
@@ -137,7 +151,7 @@ pub fn create_file_if_not_present()-> Result<(),ConfigurationFileError>{
         Ok(false)=>{
             match fs::File::create(file_name){
                 Ok(_)=> {
-                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:HashMap::new()})?;
+                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:Vec::new()})?;
                     println!("{} configuration file was created", file_name);
                     Ok(())
                 },

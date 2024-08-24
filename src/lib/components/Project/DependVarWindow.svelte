@@ -1,0 +1,50 @@
+<style>
+    .classBox{
+        height: 200px;
+        overflow: hidden;
+        border: 1px solid black;
+        padding:0 5px 5px;
+        border-radius:5px;
+        margin-top:5px;
+        overflow-y: scroll;
+    }    
+</style>
+<script lang="ts">
+    export let listOfClasses:string[] = []
+
+    const DEPENDENT_VARIABLE_OPTIONS = {
+        CLASSES:"CLASSES",
+        LABELS:"LABELS"
+    } as const
+
+    type DependentVariableOptions = typeof DEPENDENT_VARIABLE_OPTIONS[keyof typeof DEPENDENT_VARIABLE_OPTIONS]
+    let showDependentVariablesAs:DependentVariableOptions = DEPENDENT_VARIABLE_OPTIONS.CLASSES
+    let searchText = ''
+    $:listOfClasses
+    let searchableClasses = [...listOfClasses]
+
+    $: isTextInClassList(searchText)
+
+    const isTextInClassList = (searchText:string)=>{
+
+        if (!searchText) {
+            searchableClasses = listOfClasses
+        }
+        let res = listOfClasses.filter((className:string)=> className.toLowerCase().startsWith(searchText)) ??  []
+
+        searchableClasses = [...res]
+    }    
+
+</script>
+
+<div>
+    <button disabled={showDependentVariablesAs === DEPENDENT_VARIABLE_OPTIONS.CLASSES}>As Classes</button>
+    <button on:click={()=>showDependentVariablesAs = DEPENDENT_VARIABLE_OPTIONS.LABELS} disabled={showDependentVariablesAs === DEPENDENT_VARIABLE_OPTIONS.LABELS}>As Labels</button>
+    <input bind:value={searchText} placeholder="Search for an existing class"/>
+    <div class="classBox">
+        
+        {#each searchableClasses as className, ix}
+        <p>{ix+1}). {className}</p>
+        {/each}
+    </div>
+</div>
