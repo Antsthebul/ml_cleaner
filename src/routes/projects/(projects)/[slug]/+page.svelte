@@ -1,0 +1,1 @@
+<p>THis is the detail home page</p>

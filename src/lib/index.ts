@@ -6,6 +6,5 @@ export {default as ProjectAPI} from "./api/ProjectAPI"
 export {default as DependVarWindow} from "./components/Project/DependVarWindow.svelte";
 export {default as ProjectEnvironment} from "./components/Project/ProjectEnvironment.svelte"
 
-
 export *  as store from "./store";
 export * as types from "./global_types";

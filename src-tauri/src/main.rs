@@ -13,7 +13,7 @@ mod config;
 // mod repository;
 use dotenvy;
 use crate::services::{
-  project_service::{get_all_projects,get_project_environment, get_project_by_project_name},
+  project_service::{get_all_projects,get_project_deployment, get_project_by_project_name},
   config_service::get_config,
 };
 use app::file_config;
@@ -42,7 +42,7 @@ fn main() {
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
     get_all_projects, get_config, get_project_by_project_name,
-    get_project_environment,
+    get_project_deployment,
     // list_machines, get_machine_by_machine_id, get_machine_status, 
     // update_configuration_file_command, start_machine, stop_machine, create_new_project,
     // get_all_projects, delete_project_by_name, train_model

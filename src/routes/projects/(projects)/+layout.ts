@@ -2,8 +2,9 @@ import { ProjectAPI } from '$lib';
 
 export async function load({params}){
     let slug = params.slug
-    let res = await ProjectAPI.getProjectByName(slug)
-    return {data:res.data}
+    console.log(`Load ProjectDetail Layout - slug: '${slug}'`)
+    let res = await ProjectAPI.getProjectByName(slug as string)
+    return {data:res}
 }
 
 

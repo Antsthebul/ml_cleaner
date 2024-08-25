@@ -1,12 +1,19 @@
 export interface Project {
     name: string
-    envs: Environments[]
+    deployments: Deployment[]
 
 }
-export interface Environments {
+export interface Deployment {
     name: string
     classes_file: string,
-    machine: ProjectMachine | null    
+    machines: ProjectMachine[]
+}
+// Returned with Environemt Response
+// TODO: Maybe bundle togetther rather than commenting
+export interface ClassData {
+    classes: string[],
+    file_exists: boolean,
+    last_modified:Date
 }
 
 export interface ResponseType<T>{

@@ -17,6 +17,9 @@
 
 
 </script>
+<div>
+    <a href="/editConfig">Edit Config</a>
+</div>
 <div id="side_nav">
 
     <a href="/">Home</a>

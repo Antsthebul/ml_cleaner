@@ -36,23 +36,23 @@ pub struct Configuration{
     
 }
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Environment {
+pub struct Deployment {
     pub name: String,
     pub classes_file: Option<String>,
     pub info_file:Option<String>,
-    pub machine: Option<ProjectMachine>
+    pub machines: Vec<ProjectMachine>
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Project{
     pub name: String,
-    pub envs: Vec<Environment>
+    pub deployments: Vec<Deployment>
 }
 impl Project{
-    pub fn get_project_environment(&self, env_name:&str)->Result<Environment, ConfigurationFileError>{
-        match self.envs.iter().find(|&env|env.name == env_name){
+    pub fn get_project_deployment(&self, deploy_name:&str)->Result<Deployment, ConfigurationFileError>{
+        match self.deployments.iter().find(|&dp|dp.name == deploy_name){
             Some(environ)=> Ok(environ.to_owned()),
-            None=> Err(ConfigurationFileError(format!("'{env_name}' does not exist for {}", self.name)))
+            None=> Err(ConfigurationFileError(format!("'{deploy_name}' does not exist for {}", self.name)))
         }
 
     }

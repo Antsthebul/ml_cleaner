@@ -8,13 +8,46 @@
         cursor: pointer;
     }
 }
-
+.display-flex{
+    display: flex;
+}
 .display-block{
     display: block;
+}
+.mt-10{
+    margin-top: 10px;
 }
 .mt-5{
     margin-top:5;
 }
 .mb-5{
     margin-bottom: 5px;
+}
+.mb-10{
+    margin-bottom: 10px;
+}
+.text-center{
+    text-align: center;
+}
+.justify-content-between{
+    justify-content: space-between;
+}
+.cursor{
+    &:hover{
+        cursor: pointer;
+    }
+}
+.button-link {
+    padding: 4px 8px;
+    border-radius: 10px;
+    background-color: lightgrey;
+    border: 1px solid grey
+}
+
+.button-link-disabled {
+    padding: 4px 8px;
+    border-radius: 10px;
+    background-color: lightgrey;    
+    opacity: .2;
+    border: 1px solid grey
 }

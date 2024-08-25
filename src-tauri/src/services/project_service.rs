@@ -12,25 +12,29 @@ pub async fn get_all_projects()->Result<String, String>{
     let projects:Vec<&Project> = config.iter().collect();
     Ok(serialize_response("data".parse().unwrap(), projects))
 }
+
+/// Returns serialized Result or Error. The serialized result is
+/// a project with other additional metadata.
 #[tauri::command]
-pub async fn get_project_environment(project_name:&str, env_name:&str) -> Result<String, String>{
+pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Result<String, String>{
     let project = Configuration::get_project_by_project_name(project_name)
     .map_err(|err|serialize_error(err))?;
 
-    let environment = project.get_project_environment(env_name).unwrap();
+    let deployment = project.get_project_deployment(deploy_name).unwrap();
 
-    let file_path = match &environment.classes_file{
+    let file_path = match &deployment.classes_file{
         Some(file) => file,
         // Return bare 'inititalized' 
         None=>{
-            let res = serde_json::json!({"project":project});
+            let res = serde_json::json!({"deployment":deployment, "classes_data":Vec::<String>::new()});
             return Err(serialize_response("data".parse().unwrap(), res))}
     };
+    // Add meta data. No need for 'response' struct
+    let class_data = get_classes_data(file_path).await
+    .map_err(|err|serialize_error(err.to_string()))?;
+    let response = serde_json::json!({"deployment":deployment, "classes_data":class_data});
 
-    // let class_data = get_classes_data(file_path).await
-    // .map_err(|err|serialize_error(err.to_string()))?;
-
-    Ok(serialize_response("data".parse().unwrap(), environment))
+    Ok(serialize_response("data".parse().unwrap(), response))
 }
 #[tauri::command]
 pub async fn get_project_by_project_name(project_name:&str)-> Result<String, String>{

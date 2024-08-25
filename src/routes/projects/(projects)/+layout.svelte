@@ -12,6 +12,7 @@
     let slug = $page.params.slug
 
     let curProject = data.data ?? INIT_PROJECT
+    let selectedDeployment = ''
 
     async function deleteProject(){
         let data:string = await invoke("delete_project_by_name", {name:slug})
@@ -23,18 +24,35 @@
             console.error("Unable to delete project due to ", result)
         }
     }
-    
+
+    async function handleNavigateDeployment(name:string){
+        selectedDeployment = name
+        await goto(`/projects/${slug}/${name}`)
+    }
 </script>
 
 <div id="titleSection">
-    <h1>{slug}</h1>
-    <button on:click={deleteProject} class="button">Delete</button>
+    <div class="display-flex justify-content-between">
+
+        <h1>{slug}</h1>
+        <div>
+            <button on:click={deleteProject} class="button">Delete</button>
+        </div>
+
+    </div>
     <a href={`/projects/${slug}`}>Project Home</a>
+    <!--Fake breadcrumbs-->
+    {#if selectedDeployment}
+        <span> -> {selectedDeployment}</span>
+    {/if}
     <h3>Environments</h3>
     <div class="display-flex gap-10">
 
-        {#each curProject.envs as env}
-        <a href={`/projects/${slug}/${env.name}`}>{env.name}</a>
+        {#each curProject.deployments as dep}
+            <button 
+            class={`button-link ${selectedDeployment === dep.name ? "button-link-disabled":''}`}
+                on:click={async ()=>handleNavigateDeployment(dep.name)}
+            >{dep.name}</button>
         {/each}
     </div>
     <slot></slot>
