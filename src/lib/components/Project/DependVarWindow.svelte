@@ -7,9 +7,17 @@
         border-radius:5px;
         margin-top:5px;
         overflow-y: scroll;
-    }    
+    }
+    
+    .depVar{
+        &:hover{
+            background-color: grey;
+        }
+    }
 </style>
 <script lang="ts">
+	import { goto } from "$app/navigation";
+
     export let listOfClasses:string[] = []
 
     const DEPENDENT_VARIABLE_OPTIONS = {
@@ -44,7 +52,9 @@
     <div class="classBox">
         
         {#each searchableClasses as className, ix}
-        <p>{ix+1}). {className}</p>
+        <button class="cursor depVar button-less display-block"
+            on:click={()=>goto(`/data/${className}`)}
+            >{ix+1}). {className}</button>
         {/each}
     </div>
 </div>

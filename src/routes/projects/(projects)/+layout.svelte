@@ -4,6 +4,8 @@
 	import { invoke } from "@tauri-apps/api/tauri";
     import {projects} from "$lib/store"
     import {goto} from "$app/navigation"
+
+    import CaretRightBold from '~icons/ph/caret-right-bold';
     
     export let data
 
@@ -43,7 +45,10 @@
     <a href={`/projects/${slug}`}>Project Home</a>
     <!--Fake breadcrumbs-->
     {#if selectedDeployment}
-        <span> -> {selectedDeployment}</span>
+        <span class="display-i-flex fit-content f-5 fake-link">
+            <CaretRightBold />
+        </span>
+        <span class="fake-link">  {selectedDeployment}</span>
     {/if}
     <h3>Environments</h3>
     <div class="display-flex gap-10">

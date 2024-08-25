@@ -44,3 +44,8 @@ export interface ConfigurationResponse{
 export interface Configuration{
     default_machine:string | null
 }
+
+export interface ImageData{
+    b64:string,
+    file_name:string
+}

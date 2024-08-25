@@ -19,14 +19,7 @@
             flex:1;
         }
     }
-    .machineCard{
-        border:1px solid lightgrey;
-        box-shadow: 1px 1px 5px lightgrey;
-        padding:5px;
-        border-radius: 15px;
-        width:fit-content;
-        max-width: 30%;
-    }
+
     .bold{
         font-weight: 700;
     }
@@ -44,6 +37,7 @@
 	import { invoke } from "@tauri-apps/api/tauri";
     import type {Machine, ProjectMachine, Deployment} from "$lib/global_types";
 	import DependVarWindow from "$lib/components/Project/DependVarWindow.svelte";
+	import ProjectMachineSideDrawer from "$lib/components/Project/ProjectMachineSideDrawer.svelte";
 
 
 	export let data
@@ -64,7 +58,7 @@
 
     $: fileLoadResponse = ""
 
-    $: showMachineListDropDown = false;
+    let showMachineList = false;
     let machines = [] as Machine[]
     let selectedMachineIdx = 0;
     
@@ -139,6 +133,10 @@
         let response = await invoke("train_model", {projectName:curDeployment.name, })
         console.log("train cool ", response)
     }
+    $: showMachineText= ():string=>{
+        let text = showMachineList ? "Hide": "Show"
+        return text + " machines"
+    }
 
 </script>
 
@@ -151,8 +149,8 @@
         {/if}
         <!-- <span class="display-block mb-5"><b>Machine: </b> {#if !curDeployment.machine}No machine added at this time{/if}</span> -->
         <div class="text-center">
-            <b>Machines</b>
-            {#if !showMachineListDropDown}
+            <button class="button-less fake-link cursor" on:click={()=> showMachineList = !showMachineList}>{showMachineText()}</button>
+            <!-- {#if !showMachineListDropDown}
             <button on:click={handleAddMachine}>Add a Machine</button>
             {:else}
             <button on:click={handleSaveMachine}>Save</button>
@@ -162,23 +160,10 @@
                 <option value={i+1}>{machine.name}</option>
                 {/each}
             </select>
-            {/if}
+            {/if} -->
         </div>
         <div id="machines_container mb-10">
-            {#each curDeployment.machines as machine}
-            <div class="machineCard">
-                <span class="display-block">
-                    <a href={`/machines/${machine.name}`}>
-                        {machine.name}
-                    </a>
-                    - 
-                </span>
-                <span class="display-block"><b>MachineID:</b> {machine.id}</span>
-                <span class="display-block"><b>IP:</b> {machine.ip_addr ?? "-"}</span>
-                <span class="display-block"><b>Type:</b> {machine.machine_type}</span>
-
-            </div>
-                {/each}
+            <!--Shwo only name and state-->
             <div>
                 <!-- <button class="display-block mt-5" disabled={!curDeployment.machine}>Start</button> -->
                 <!-- {#if curDeployment.machines}
@@ -217,4 +202,5 @@
         </div>
         <DependVarWindow listOfClasses={listOfClasses}/>
     </div>
+    <ProjectMachineSideDrawer bind:showSideDrawer={showMachineList} machines={curDeployment.machines}/>
 </section>

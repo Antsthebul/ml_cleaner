@@ -4,8 +4,16 @@
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, write};
+use std::{fmt::{self, write}};
 use crate::file_config::Configuration;
+use bytes::Bytes;
+use base64::prelude::*;
+
+#[derive(Deserialize, Serialize)]
+pub struct ImageObject{
+    b64: String,
+    file_name:String,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct ClassData{
@@ -86,3 +94,32 @@ async fn get_data_runs(){
 async fn get_stage_data(){
 
 }
+
+/// Returns a paginated list of 'in-storage' image URLs related
+/// to the dependent variable ie. 'apples'
+pub async fn get_data_for_class(dep_name: &str, storage_path:&str)->Result<Vec<ImageObject>, AWSClientError>{
+    let mut path = "data/images/".to_string();
+    path.push_str(dep_name);
+    
+    let res = bucket_client().unwrap().list(path,Some("".to_string())).await
+        .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
+
+    // Not sure why this is returning a list?
+    let contents = &res[0].contents;
+
+    let mut res = Vec::<ImageObject>::new();
+    for ix in 0..5{
+        let c = &contents[ix];
+        let data = bucket_client().unwrap().get_object(&c.key).await
+        .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
+
+        res.push(
+            ImageObject{
+                b64:BASE64_STANDARD.encode(data.bytes().to_vec()),
+                file_name:c.key.to_owned(),
+            }
+        );
+
+    }
+    Ok(res)
+} 

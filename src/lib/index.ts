@@ -5,6 +5,9 @@ export {default as MachineAPI} from "./api/MachineAPI"
 export {default as ProjectAPI} from "./api/ProjectAPI"
 export {default as DependVarWindow} from "./components/Project/DependVarWindow.svelte";
 export {default as ProjectEnvironment} from "./components/Project/ProjectEnvironment.svelte"
+export {default as SideDrawer} from "./components/common/SideDrawer.svelte"
+export {default as ProjectMachineSideDrawer} from "./components/Project/ProjectMachineSideDrawer.svelte"
+export {default as ListComponent} from "./components/common/ListComponent.svelte"
 
 export *  as store from "./store";
 export * as types from "./global_types";

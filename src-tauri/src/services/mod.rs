@@ -2,6 +2,7 @@
 /// data
 pub mod project_service;
 pub mod config_service;
+pub mod aws_service;
 
 use app::file_config::Configuration;
 use crate::common::response_types::serialize_error;
