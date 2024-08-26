@@ -14,11 +14,30 @@
             background-color: grey;
         }
     }
+    .loading{
+        position:fixed;
+        top:0;
+        width: 100%;
+        background-color:rgba(255, 255, 255, 0.566);
+    }
+    .inner-loader{
+        width: 100%;
+        z-index: 9999;
+        height:100vh;
+        font-size: 4em;
+        margin: 0 auto;
+        color:rgba(6, 115, 205, 0.884);
+        display:flex;
+        justify-content: center;
+        align-items: center;
+    }
 </style>
 <script lang="ts">
 	import { goto } from "$app/navigation";
-
+    import LineMdLoadingLoop from '~icons/line-md/loading-loop';
+    
     export let listOfClasses:string[] = []
+    let loading = false
 
     const DEPENDENT_VARIABLE_OPTIONS = {
         CLASSES:"CLASSES",
@@ -44,6 +63,14 @@
     }    
 
 </script>
+{#if loading}
+<div class="loading">
+    <div class="inner-loader">
+
+        <LineMdLoadingLoop />
+    </div>
+</div>
+{/if}
 
 <div>
     <button disabled={showDependentVariablesAs === DEPENDENT_VARIABLE_OPTIONS.CLASSES}>As Classes</button>
@@ -53,7 +80,7 @@
         
         {#each searchableClasses as className, ix}
         <button class="cursor depVar button-less display-block"
-            on:click={()=>goto(`/data/${className}`)}
+            on:click={()=>{loading = true; goto(`/data/${className}`)}}
             >{ix+1}). {className}</button>
         {/each}
     </div>

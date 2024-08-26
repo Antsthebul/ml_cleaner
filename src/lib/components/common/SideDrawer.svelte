@@ -19,9 +19,9 @@
 
     // Apply shadow
     if(side === "left"){
-        cssStyles += "box-shadow: 1px 1px 4px lightgrey"
+        cssStyles += "box-shadow: 1px 1px 8px lightgrey"
     }else{
-        cssStyles += "box-shadow: -1px 1px 4px lightgrey"
+        cssStyles += "box-shadow: -1px 1px 8px lightgrey"
 
     }
 </script>

@@ -5,7 +5,7 @@
     .machineCard{
         border:1px solid lightgrey;
         box-shadow: 1px 1px 5px lightgrey;
-        padding:5px;
+        padding:5px 10px;
         border-radius: 15px;
         width:fit-content;
         text-align: left;
@@ -36,8 +36,8 @@
             <span class="display-block"><b>IP:</b> {machine.ip_addr ?? "-"}</span>
             <span class="display-block"><b>Type:</b> {machine.machine_type}</span>
             <div class="display-flex gap-10 justify-content-center mt-5">
-                    <button>Stop</button>
-                    <button on:click={()=>{}}>Train</button>
+                    <button class="button button-danger">Stop</button>
+                    <button class="button button-success" on:click={()=>{}}>Train</button>
             </div>
 
         </div>

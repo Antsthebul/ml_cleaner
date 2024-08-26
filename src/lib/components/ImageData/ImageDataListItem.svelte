@@ -1,0 +1,15 @@
+<script lang="ts">
+    export let item
+</script>
+
+<img src={`data:image/jpeg;base64,${item.b64}`} width="150px" height="150px"/>
+<div class="display-flex justify-center gap-10 mt-10">
+    <div>
+        
+        <button class="button button-info">Keep</button>
+    </div>
+    <div>
+        
+        <button class="button button-danger">Remove</button>
+    </div>
+</div>

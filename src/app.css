@@ -31,6 +31,15 @@
         color:red;
     }
 }
+.button-success{
+    background-color: #06dd06;
+    color:white;
+
+    &:hover{
+        background-color:06dd06;
+        color:white
+    }
+}
 .f-5{
     font-size:.6em;
 }
