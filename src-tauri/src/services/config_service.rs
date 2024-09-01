@@ -1,11 +1,19 @@
 use crate::common::response_types::{serialize_response, serialize_success};
+use app::file_config::Configuration;
 
+#[derive(Debug)]
+pub struct ConfigSerivceError(String);
+
+impl std::fmt::Display for ConfigSerivceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result{
+        write!(f, "{}", self.0)
+    }
+}
 /// Primaryily used to get all data for a configurations
 /// if you want to fetch all projects, use `get_all_projects`
-#[tauri::command]
-pub async fn get_config()->Result<String, String>{
-    let file = crate::services::get_configuration_file_for_commands()?;
-    Ok(serialize_response("data".parse().unwrap(), file))
+pub async fn get_config()->Result<Configuration, ConfigSerivceError>{
+crate::services::get_configuration_file_for_commands()
+    .map_err(|err|ConfigSerivceError(err.to_string()))
 }
 
 #[tauri::command]

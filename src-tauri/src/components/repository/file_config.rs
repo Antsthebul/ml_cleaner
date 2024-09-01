@@ -2,6 +2,13 @@ use std::{collections::HashMap, fmt, fs, io::{self, prelude::*},net, path, str::
 use toml;
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Repository{
+    pub provider:String,
+    pub storage_type:String,
+    pub path : String,
+    pub name : String
+}
 
 #[derive(Debug)]
 pub struct ConfigurationFileError(String);
@@ -35,18 +42,22 @@ pub struct Configuration{
     pub projects:Vec<Project>
     
 }
+/// A specific environment that relates to the project
+/// Examples like Dev/Stg/Prod  for an CNN project
+/// would be dscribed as a deployment
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Deployment {
     pub name: String,
-    pub classes_file: Option<String>,
-    pub info_file:Option<String>,
-    pub machines: Vec<ProjectMachine>
+    pub machines: Vec<ProjectMachine>,
+    pub files: Option<HashMap<String, String>>
+
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Project{
     pub name: String,
-    pub deployments: Vec<Deployment>
+    pub deployments: Vec<Deployment>,
+    pub repository: Repository
 }
 impl Project{
     pub fn get_project_deployment(&self, deploy_name:&str)->Result<Deployment, ConfigurationFileError>{
@@ -141,19 +152,22 @@ impl Configuration {
 
 /// Returns the file and bool indicating if the file was created, or returns 
 /// error
-pub fn create_file_if_not_present()-> Result<(),ConfigurationFileError>{
+pub fn create_file_if_not_present()-> Result<Configuration,ConfigurationFileError>{
     let file_name = "../ml_cleaner.conf";
     match path::Path::new(file_name).try_exists(){
         Ok(true)=>{
             println!("{} configuration file exists", file_name );
-            Ok(())
+            let file = Configuration::get_configuration_file().unwrap();
+            Ok(file)
         },
         Ok(false)=>{
             match fs::File::create(file_name){
                 Ok(_)=> {
-                    let _= Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:Vec::new()})?;
+                    Configuration::update_configuration_file(Configuration{default_machine:Some("".to_string()),projects:Vec::new()})?;
                     println!("{} configuration file was created", file_name);
-                    Ok(())
+                    let file = Configuration::get_configuration_file().unwrap();
+
+                    Ok(file)
                 },
                 Err(err)=> Err(ConfigurationFileError(err.to_string()))
             }
