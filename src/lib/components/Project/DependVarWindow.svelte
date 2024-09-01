@@ -35,10 +35,12 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
     import LineMdLoadingLoop from '~icons/line-md/loading-loop';
+    import { page } from "$app/stores";
     
     export let listOfClasses:string[] = []
+    
     let loading = false
-
+    
     const DEPENDENT_VARIABLE_OPTIONS = {
         CLASSES:"CLASSES",
         LABELS:"LABELS"
@@ -47,6 +49,7 @@
     type DependentVariableOptions = typeof DEPENDENT_VARIABLE_OPTIONS[keyof typeof DEPENDENT_VARIABLE_OPTIONS]
     let showDependentVariablesAs:DependentVariableOptions = DEPENDENT_VARIABLE_OPTIONS.CLASSES
     let searchText = ''
+    let slug = $page.params.slug
     $:listOfClasses
     let searchableClasses = [...listOfClasses]
 
@@ -80,7 +83,7 @@
         
         {#each searchableClasses as className, ix}
         <button class="cursor depVar button-less display-block"
-            on:click={()=>{loading = true; goto(`/data/${className}`)}}
+            on:click={()=>{loading = true; goto(`/data/${className}?project=${slug}`)}}
             >{ix+1}). {className}</button>
         {/each}
     </div>

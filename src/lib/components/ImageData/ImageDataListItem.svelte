@@ -1,5 +1,7 @@
 <script lang="ts">
     export let item
+    export let handleDelete
+
 </script>
 
 <img src={`data:image/jpeg;base64,${item.b64}`} width="150px" height="150px"/>
@@ -10,6 +12,6 @@
     </div>
     <div>
         
-        <button class="button button-danger">Remove</button>
+        <button class="button button-danger" on:click={()=>handleDelete(item.file_name)}>Remove</button>
     </div>
 </div>

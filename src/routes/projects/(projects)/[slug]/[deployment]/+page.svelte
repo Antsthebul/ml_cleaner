@@ -36,7 +36,6 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
     import type {Machine, ProjectMachine, Deployment} from "$lib/global_types";
-	import DependVarWindow from "$lib/components/Project/DependVarWindow.svelte";
 	import ProjectMachineSideDrawer from "$lib/components/Project/ProjectMachineSideDrawer.svelte";
 
 
@@ -200,7 +199,6 @@
             <!-- <p>Last Modified: {localProject.class_data.lastModified ? new Date(localProject.class_data.lastModified).toLocaleString():""}</p> -->
             <p><span class="bold">Total Trained Classes: </span> {listOfClasses?.length}</p>
         </div>
-        <DependVarWindow listOfClasses={listOfClasses}/>
     </div>
     <ProjectMachineSideDrawer bind:showSideDrawer={showMachineList} machines={curDeployment.machines}/>
 </section>

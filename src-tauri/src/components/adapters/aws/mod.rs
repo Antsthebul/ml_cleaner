@@ -96,34 +96,32 @@ async fn get_stage_data(){
 
 }
 
-/// Returns a paginated list of 'in-storage' image URLs related
-/// to the dependent variable ie. 'apples'
-// pub async fn get_data_for_class(dep_name: &str, storage_path:&str)->Result<Vec<ImageObject>, AWSClientError>{
-//     let mut path = "data/images/".to_string();
-//     path.push_str(dep_name);
+/// Returns a paginated list of 'in-storage' image URLs. Lookups performed by complete path
+/// ie. 'data/images/banangas', delimiter="" . Which means get everything in this path
+pub async fn get_data_for_class(bucket_name:&str, path:&str)->Result<Vec<ImageObject>, AWSClientError>{
     
-//     let res = bucket_client().unwrap().list(path,Some("".to_string())).await
-//         .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
+    let res = bucket_client(bucket_name).unwrap().list(path.to_owned(),Some("".to_string())).await
+        .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
 
-//     // Not sure why this is returning a list?
-//     let contents = &res[0].contents;
+    // Not sure why this is returning a list?
+    let contents = &res[0].contents;
 
-//     let mut res = Vec::<ImageObject>::new();
-//     for ix in 0..5{
-//         let c = &contents[ix];
-//         let data = bucket_client().unwrap().get_object(&c.key).await
-//         .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
+    let mut res = Vec::<ImageObject>::new();
+    for ix in 0..5{
+        let c = &contents[ix];
+        let data = bucket_client(bucket_name).unwrap().get_object(&c.key).await
+        .map_err(|err| AWSClientError::ObjectRetrievalError(err.to_string()))?;
 
-//         res.push(
-//             ImageObject{
-//                 b64:BASE64_STANDARD.encode(data.bytes().to_vec()),
-//                 file_name:c.key.to_owned(),
-//             }
-//         );
+        res.push(
+            ImageObject{
+                b64:BASE64_STANDARD.encode(data.bytes().to_vec()),
+                file_name:c.key.to_owned(),
+            }
+        );
 
-//     }
-//     Ok(res)
-// } 
+    }
+    Ok(res)
+} 
 
 // Delete actual object from bucket
 // pub async fn delete_object(file_name:&str)->Result<(), AWSClientError>{

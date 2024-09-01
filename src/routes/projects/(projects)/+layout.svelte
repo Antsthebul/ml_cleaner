@@ -1,4 +1,6 @@
 <script lang="ts">
+	import DependVarWindow from "$lib/components/Project/DependVarWindow.svelte";
+
     import { page } from "$app/stores";
 	import type { SimpleSuccessResponse } from "$lib/global_types";
 	import { invoke } from "@tauri-apps/api/tauri";
@@ -13,8 +15,9 @@
 
     let slug = $page.params.slug
 
-    let curProject = data.data ?? INIT_PROJECT
+    let curProject = data.data.project ?? INIT_PROJECT
     let selectedDeployment = ''
+    let listOfClasses = data.data.classes
 
     async function deleteProject(){
         let data:string = await invoke("delete_project_by_name", {name:slug})
@@ -60,5 +63,7 @@
             >{dep.name}</button>
         {/each}
     </div>
+    <DependVarWindow listOfClasses={listOfClasses}/>
+
     <slot></slot>
 </div>

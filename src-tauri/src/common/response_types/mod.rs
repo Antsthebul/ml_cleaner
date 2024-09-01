@@ -2,6 +2,9 @@ use std::{ str, fmt};
 
 use serde::Serialize;
 
+pub mod project_responses;
+pub mod config_response;
+
 pub enum ResponseType {
     DATA,
     ERROR

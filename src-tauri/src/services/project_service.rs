@@ -1,6 +1,9 @@
+use std::{collections::HashMap, io::BufReader};
+use crate::common::response_types::project_responses::{DeploymentResponse, FileDataResponse, ProjectResponse};
 use app::{file_config::{Project,Configuration},
     // get_classes_data
     };
+use serde_json::Value;
 use crate::common::response_types::{ serialize_error, serialize_response};
 
 #[derive(Debug)]
@@ -22,7 +25,7 @@ pub async fn get_all_projects()->Result<Vec<Project>, ProjectError>{
 
 /// Returns serialized Result or Error. The serialized result is
 /// a project with other additional metadata.
-pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Result<String, ProjectError>{
+pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Result<DeploymentResponse, ProjectError>{
     let project = Configuration::get_project_by_project_name(project_name)
     .map_err(|err|ProjectError(err.to_string()))?;
 
@@ -38,6 +41,11 @@ pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Resu
             }
         }
     };
+    let dr = DeploymentResponse{
+        name:deployment.name,
+        machines:deployment.machines,
+        files:None
+    };
     // let file_path = match &deployment.classes_file{
     //     Some(file) => file,
     //     // Return bare 'inititalized' 
@@ -50,11 +58,23 @@ pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Resu
     // .map_err(|err|serialize_error(err.to_string()))?;
     // let response = serde_json::json!({"deployment":deployment, "classes_data":class_data});
 
-    Ok(serialize_response("data".parse().unwrap(), "success"))
+    Ok(dr)
 }
 
-pub async fn get_project_by_project_name(project_name:&str)-> Result<Project, ProjectError>{
+pub async fn get_project_by_project_name(project_name:&str)-> Result<ProjectResponse<Project>, ProjectError>{
 
-    Ok(Configuration::get_project_by_project_name(project_name)
-        .map_err(|err|ProjectError(err.to_string()))?)
+    let project = Configuration::get_project_by_project_name(project_name)
+    .map_err(|err|ProjectError(err.to_string()))?;
+    
+    let file = std::fs::File::open(".cache/map.json").unwrap();
+    let reader = BufReader::new(file);
+    let contents:HashMap<String, Vec<u8>> = serde_json::from_reader(reader).unwrap();
+    let val = &contents[project_name];
+    let res = String::from_utf8(val.to_vec()).unwrap();
+    let classes = res.split_terminator("\n").map(|val|val.to_owned()).collect();
+    let pr = ProjectResponse{
+        project,
+        classes
+    };
+    Ok(pr)
 }
