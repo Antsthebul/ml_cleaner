@@ -26,9 +26,9 @@ export default {
             throw err
         }
     },
-    getDependentVarData: async function (projectName:string, depName:string):Promise<ImageData>{
+    getDependentVarData: async function (projectName:string, depName:string, page?:string):Promise<{images:ImageData[], next_page?:string, previous_page?:string}>{
         try{
-            let res:string = await invoke("get_data_for_class", {projectName, depName})
+            let res:string = await invoke("get_data_for_class", {projectName, depName, page})
             let data = JSON.parse(res)
             return data.data
         }catch(err){

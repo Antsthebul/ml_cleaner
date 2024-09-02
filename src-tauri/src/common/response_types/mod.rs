@@ -5,6 +5,11 @@ use serde::Serialize;
 pub mod project_responses;
 pub mod config_response;
 
+#[derive(Debug, Serialize)]
+pub struct Paginate<T>{
+    page:T,
+    next_page: Option<String>
+}
 pub enum ResponseType {
     DATA,
     ERROR

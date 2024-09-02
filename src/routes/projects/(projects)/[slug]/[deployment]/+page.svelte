@@ -36,7 +36,7 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
     import type {Machine, ProjectMachine, Deployment} from "$lib/global_types";
-	import ProjectMachineSideDrawer from "$lib/components/Project/ProjectMachineSideDrawer.svelte";
+	import {ProjectMachineSideDrawer} from "$lib";
 
 
 	export let data

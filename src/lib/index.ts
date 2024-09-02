@@ -8,6 +8,7 @@ export {default as ProjectEnvironment} from "./components/Project/ProjectEnviron
 export {default as SideDrawer} from "./components/common/SideDrawer.svelte"
 export {default as ProjectMachineSideDrawer} from "./components/Project/ProjectMachineSideDrawer.svelte"
 export {default as ListComponent} from "./components/common/ListComponent.svelte"
+export {default as Loader} from "./components/common/Loader.svelte"
 
 export *  as store from "./store";
 export * as types from "./global_types";

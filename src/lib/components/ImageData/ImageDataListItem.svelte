@@ -12,6 +12,6 @@
     </div>
     <div>
         
-        <button class="button button-danger" on:click={()=>handleDelete(item.file_name)}>Remove</button>
+        <button class="button button-danger" on:click={()=>handleDelete(item.file_path)}>Remove</button>
     </div>
 </div>

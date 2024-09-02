@@ -47,5 +47,5 @@ export interface Configuration{
 
 export interface ImageData{
     b64:string,
-    file_name:string
+    file_path:string
 }

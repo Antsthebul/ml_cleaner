@@ -49,7 +49,7 @@ pub struct Configuration{
 pub struct Deployment {
     pub name: String,
     pub machines: Vec<ProjectMachine>,
-    pub files: Option<HashMap<String, String>>
+    pub files: Option<HashMap<String, String>> // store trainjson, test.json and any other meta files
 
 }
 

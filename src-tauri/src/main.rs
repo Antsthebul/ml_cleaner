@@ -17,7 +17,7 @@ use dotenvy;
 use crate::comms_endpoint::{
   project_commands::{get_all_projects, get_project_by_project_name, get_project_deployment},
   config_commands::get_config,
-  aws_commands::get_data_for_class
+  aws_commands::{get_data_for_class, delete_data_for_class}
 
 };
 // use crate::comms_endpoint::{
@@ -84,8 +84,7 @@ fn main() {
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
      get_all_projects, get_config, get_project_by_project_name,
-    get_project_deployment, get_data_for_class
-    // delete_data_for_class
+    get_project_deployment, get_data_for_class, delete_data_for_class
     // list_machines, get_machine_by_machine_id, get_machine_status, 
     // update_configuration_file_command, start_machine, stop_machine, create_new_project,
     // get_all_projects, delete_project_by_name, train_model
