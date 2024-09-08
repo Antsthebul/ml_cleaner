@@ -36,6 +36,7 @@
             <span class="display-block"><b>IP:</b> {machine.ip_addr ?? "-"}</span>
             <span class="display-block"><b>Type:</b> {machine.machine_type}</span>
             <div class="display-flex gap-10 justify-content-center mt-5">
+                    <button class="button button-option">Show Runs</button>
                     <button class="button button-danger">Stop</button>
                     <button class="button button-success" on:click={()=>{}}>Train</button>
             </div>

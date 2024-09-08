@@ -1,9 +1,10 @@
 import { ProjectAPI } from '$lib';
+import { loadProjectDetail } from '../../../store.js';
 
 export async function load({params}){
     let slug = params.slug
     console.log(`Load ProjectDetail Layout - slug: '${slug}'`)
-    let res = await ProjectAPI.getProjectByName(slug as string)
+    let res = await loadProjectDetail(slug as string)
     return {data:res}
 }
 

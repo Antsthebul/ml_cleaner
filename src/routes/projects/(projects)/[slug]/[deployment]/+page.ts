@@ -8,15 +8,11 @@ export async function load({params}){
 
     try{
 
-        let res:{deployment:Deployment, classes_data:ClassData} = await ProjectAPI.getProjectDeployment(slug, deployName)
-        let {deployment, classes_data} = res
-        if (!deployment){
-            throw Error(`project detail does not contain deployment. returned ${JSON.stringify(res)}`)
-        }
-        return {data:{deployment, classes_data: classes_data}}
+        let deployment: Deployment = await ProjectAPI.getProjectDeployment(slug, deployName)
+        return {data:deployment}
     }catch(err){
         console.error("[Failed] Loading ProjectDetail -> Deployment. ",err)
     }
 
-    return {data:{deployment:null, classes_data:{classes:[] as any, file_exists:false}}}
+    return {data:null}
 }

@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+    - POSTGRES_USER=ml_cleaner
+    - POSTGRES_DB=local_db
+    - POSTGRES_PASSWORD=ml_cleaner
+    - POSTGRES_HOST_AUTH_MEHTOD=trust
+    volumes:
+    - ./pg_data/init.sql:/docker-entrypoint-initdb.d/init.sql
+    - ./pg_data/data:/var/lib/postgresql/data
+    ports:
+    - 5432:5432

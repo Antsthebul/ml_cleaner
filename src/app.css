@@ -1,3 +1,10 @@
+:root{
+    --red:red;
+    --info-blue: rgb(34, 69, 245);
+    --success-green:#06dd06;
+    --option-orange:rgb(244, 156, 22);
+}
+
 .noLink{
     color:black;
     text-decoration: none;
@@ -15,31 +22,41 @@
     }
 }
 .button-info{
-    background-color: rgb(34, 69, 245);
+    background-color: var(--info-blue);
     color:white;
 
     &:hover{
         background-color: white;
-        color:rgb(34, 69, 245)
+        color:var(--info-blue)
     }
 }
 .button-danger{
-    background-color: red;
+    background-color: var(--red);
     color:white;
     &:hover{
         background-color: white;
-        color:red;
+        color:var(--red);
     }
 }
 .button-success{
-    background-color: #06dd06;
+    background-color: var(--success-green);
     color:white;
 
     &:hover{
-        background-color:06dd06;
-        color:white
+        background-color:white;
+        color:var(--success-green);
     }
 }
+.button-option{
+    background-color: var(--option-orange);
+    color:white;
+
+    &:hover{
+        background-color:white;
+        color:var(--option-orange);
+    }
+}
+
 .f-5{
     font-size:.6em;
 }

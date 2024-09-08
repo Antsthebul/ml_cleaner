@@ -1,5 +1,4 @@
 <script lang="ts">
-	import DependVarWindow from "$lib/components/Project/DependVarWindow.svelte";
 
     import { page } from "$app/stores";
 	import type { SimpleSuccessResponse } from "$lib/global_types";
@@ -17,7 +16,6 @@
 
     let curProject = data.data.project ?? INIT_PROJECT
     let selectedDeployment = ''
-    let listOfClasses = data.data.classes
 
     async function deleteProject(){
         let data:string = await invoke("delete_project_by_name", {name:slug})
@@ -31,8 +29,15 @@
     }
 
     async function handleNavigateDeployment(name:string){
-        selectedDeployment = name
-        await goto(`/projects/${slug}/${name}`)
+        let baseLink = `/projects/${slug}`;
+        if (name !=="home"){
+            selectedDeployment = name
+        }else{
+            selectedDeployment = ''
+        }
+        
+        let link = name === "home"? baseLink :`${baseLink}/${name}`
+        await goto(link)
     }
 </script>
 
@@ -45,7 +50,9 @@
         </div>
 
     </div>
-    <a href={`/projects/${slug}`}>Project Home</a>
+    <button class="fake-link button-less cursor"
+        on:click={async ()=>handleNavigateDeployment("home")}>Project Home</button>
+    
     <!--Fake breadcrumbs-->
     {#if selectedDeployment}
         <span class="display-i-flex fit-content f-5 fake-link">
@@ -58,12 +65,13 @@
 
         {#each curProject.deployments as dep}
             <button 
-            class={`button-link ${selectedDeployment === dep.name ? "button-link-disabled":''}`}
+            class={`button-link ${selectedDeployment === dep.name ? "button-link-disabled":''} cursor`}
                 on:click={async ()=>handleNavigateDeployment(dep.name)}
+            disabled={selectedDeployment === dep.name}
             >{dep.name}</button>
         {/each}
     </div>
-    <DependVarWindow listOfClasses={listOfClasses}/>
+
 
     <slot></slot>
 </div>

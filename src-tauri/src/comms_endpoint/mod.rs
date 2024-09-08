@@ -2,5 +2,6 @@
 /// analgous to the 'API/endpoints' layer in
 /// a web application
 pub mod config_commands;
-pub mod aws_commands;
+pub mod data_lake_commands;
 pub mod project_commands;
+pub mod image_verifier_commands;

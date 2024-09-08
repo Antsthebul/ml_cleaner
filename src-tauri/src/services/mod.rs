@@ -2,7 +2,8 @@
 /// data
 pub mod project_service;
 pub mod config_service;
-pub mod aws_service;
+pub mod data_lake_service;
+pub mod image_verifier_service;
 
 use app::file_config::Configuration;
 

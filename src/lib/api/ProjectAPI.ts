@@ -1,14 +1,12 @@
-import type { Deployment, Project, ResponseType, ClassData, ImageData } from "$lib/global_types";
+import type { Deployment, Project, ProjectResponse, ResponseType, ClassData, ImageData } from "$lib/global_types";
 import { invoke } from "@tauri-apps/api/tauri";
-
-type ProjectResponse = {project:Project, classes:string[]}
 
 export default {
     getProjectDeployment: async function(projectName:string,deployName:string){
         try{
 
             let res: string = await invoke("get_project_deployment", {projectName, deployName})
-            let data: ResponseType<{deployment:Deployment, classes_data:ClassData}> = JSON.parse(res) 
+            let data: ResponseType<Deployment> = JSON.parse(res) 
             return data.data
         }catch(err){
             throw err

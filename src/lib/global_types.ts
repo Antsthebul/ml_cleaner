@@ -3,9 +3,10 @@ export interface Project {
     deployments: Deployment[]
 
 }
+export type ProjectResponse = {project:Project, classes:string[]}
 export interface Deployment {
     name: string
-    classes_file: string,
+    files: any,
     machines: ProjectMachine[]
 }
 // Returned with Environemt Response

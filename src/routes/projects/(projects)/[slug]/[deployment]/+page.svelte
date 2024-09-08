@@ -41,19 +41,19 @@
 
 	export let data
 
-	const INIT_ENVIRONMENT = {
+	const INIT_DEPLOYMENT = {
 		name:'',
-		classes_file:'',
+		files:null,
 		machines:[],
 	}
-	$: data.data?.deployment
-	let curDeployment:Deployment = data.data.deployment ?? {...INIT_ENVIRONMENT}
+	
+	let curDeployment:Deployment|null = data.data ?? {...INIT_DEPLOYMENT}
 
     $: allowEditClassesPath = false;
-
-    let fileNameInput = curDeployment.classes_file
+    let fileMap = {}
+    let fileNameInput = ''
     // Used for saerch display purposes
-    $: listOfClasses = data.data.classes_data.classes
+    $: listOfClasses = []
 
     $: fileLoadResponse = ""
 
@@ -140,12 +140,11 @@
 </script>
 
 <section>
-
     <div>
         <span>{fileLoadResponse}</span>
-        {#if !data.data.classes_data.file_exists}
+        <!-- {#if !data.data.classes_data.file_exists}
         <p class="errorMessage">File does not exist</p>
-        {/if}
+        {/if} -->
         <!-- <span class="display-block mb-5"><b>Machine: </b> {#if !curDeployment.machine}No machine added at this time{/if}</span> -->
         <div class="text-center">
             <button class="button-less fake-link cursor" on:click={()=> showMachineList = !showMachineList}>{showMachineText()}</button>
@@ -177,19 +176,19 @@
                 </span>    
             </div> -->
         </div>
-        <span class="display-block mt-10 mb-5"><b>Classes Key/File: </b>{curDeployment.classes_file}</span>
-        <span class="display-block mb-5"><b>Info file: </b></span>
+        <!-- <span class="display-block mt-10 mb-5"><b>Classes Key/File: </b>{curDeployment.classes_file}</span> -->
+        <span class="display-block mb-5"><b>File(s): </b></span>
         
         {#if allowEditClassesPath}
             <div>
-
+                <input />
                 <input bind:value={fileNameInput} on:input={handleFileNameInput}/>
                 <button on:click={handleSaveUpdateEnv}>Save</button>
                 <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
             </div>
         {:else}
 
-            <button on:click={()=>setAllowEditClassesPath(true)} class="display-block">Edit</button>
+            <button on:click={()=>setAllowEditClassesPath(true)} class="display-block">Add</button>
         {/if}    
     </div>
     <div id="main">

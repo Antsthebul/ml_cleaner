@@ -1,0 +1,69 @@
+use app::{components::adapters::lake_client, LakeClient};
+use crate::{common::response_types, services::project_service};
+
+pub struct LakeServiceError(String);
+
+
+impl std::fmt::Display for LakeServiceError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{}", self.0)
+    }
+}
+
+async fn get_client_by_project(project_name:&str) -> Result<LakeClient, LakeServiceError>{
+    let proj = project_service::get_project_by_project_name(project_name).await
+    .map_err(|err|LakeServiceError(err.to_string()))?;
+
+
+    Ok(LakeClient::new(&proj.project.repository.name)
+        .map_err(|err|LakeServiceError(err.to_string()))?)
+
+}
+/// Thin wrapper for fetching image data for classes from repository utilizing project name along with
+// desired class. To be used by other services
+pub async fn get_data_for_class(project_name:&str, dep_name:&str, page:&str)-> Result<lake_client::ImageListResult, LakeServiceError>{
+    let proj = project_service::get_project_by_project_name(project_name).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    let mut path = proj.project.repository.path;
+    path.push_str(dep_name);
+
+    let lc = LakeClient::new(&proj.project.repository.name)
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    Ok(lc.get_data_for_class(path.as_str(), page ).await
+    .map_err(|err|LakeServiceError(err.to_string()))?)
+
+}
+
+ // rename to get_dependent_data. This function should fetch classes
+ // along with traint/test data. Fetching process is done by first 
+ // checking cache. If not in cache fetch from remote.
+
+/// This will remove the object from the bucket, and remove the
+/// file from the training data section.
+pub async fn delete_data_for_class( project_name:&str,file_name:&str)-> Result<(), LakeServiceError>{
+
+    let lc = get_client_by_project(project_name).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    lc.delete_object( file_name).await
+    .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    Ok(())
+}
+
+pub async fn list_all_classes(project_name:&str) -> Result<Vec<String>, LakeServiceError>{
+    let proj = project_service::get_project_by_project_name(project_name).await
+    .map_err(|err|LakeServiceError(err.to_string()))?;
+
+
+    let lc = LakeClient::new(&proj.project.repository.name)
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+
+    Ok(lc.list_class_names(&proj.project.repository.path).await
+        .map_err(|err|LakeServiceError(err.to_string()))?)
+
+    
+}
