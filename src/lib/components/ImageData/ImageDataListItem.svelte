@@ -1,6 +1,7 @@
 <script lang="ts">
     export let item
     export let handleDelete
+    export let handleKeep
 
 </script>
 
@@ -8,7 +9,7 @@
 <div class="display-flex justify-center gap-10 mt-10">
     <div>
         
-        <button class="button button-info">Keep</button>
+        <button class={`button button-info ${item.verified && "button-disabled"}`} on:click={()=>handleKeep(item.file_path)} disabled={item.verified}>Keep</button>
     </div>
     <div>
         

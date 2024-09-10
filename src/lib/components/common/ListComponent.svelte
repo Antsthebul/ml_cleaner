@@ -14,6 +14,7 @@
     export let data:any ={images:[]}
     export let renderItem:any   
     export let handleDelete:(filePath:string)=>void 
+    export let handleKeep:(filePath:string)=>void
     export let handlePage:any
 
     const Component = renderItem;
@@ -31,7 +32,7 @@
     <section id="list_container">
         {#each items as item}
         <div>
-            <Component item={item} handleDelete={handleDelete}/>
+            <Component item={item} handleDelete={handleDelete} handleKeep={handleKeep}/>
              
         </div>
         {/each}

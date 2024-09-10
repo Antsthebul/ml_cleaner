@@ -1,5 +1,5 @@
-use app::{components::adapters::lake_client, LakeClient};
-use crate::{common::response_types, services::project_service};
+use app::{components::adapters::lake_client, ImageObject, LakeClient};
+use crate::{common::response_types::{self, serialize_response}, services::project_service};
 
 pub struct LakeServiceError(String);
 
@@ -53,17 +53,23 @@ pub async fn delete_data_for_class( project_name:&str,file_name:&str)-> Result<(
     Ok(())
 }
 
+/// Lists all classes found in data lake. Classes are folder/file names
 pub async fn list_all_classes(project_name:&str) -> Result<Vec<String>, LakeServiceError>{
     let proj = project_service::get_project_by_project_name(project_name).await
     .map_err(|err|LakeServiceError(err.to_string()))?;
 
-
     let lc = LakeClient::new(&proj.project.repository.name)
         .map_err(|err|LakeServiceError(err.to_string()))?;
 
-
     Ok(lc.list_class_names(&proj.project.repository.path).await
         .map_err(|err|LakeServiceError(err.to_string()))?)
-
     
+}
+
+pub async fn get_data_by_path(project_name:&str, file_path:&str) -> Result<ImageObject, LakeServiceError>{
+    let lc = get_client_by_project(project_name).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    lc.get_data_for_image(file_path).await
+        .map_err(|err|LakeServiceError(err.to_string()))
 }

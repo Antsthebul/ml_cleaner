@@ -24,6 +24,8 @@ export default {
             throw err
         }
     },
+    
+    /**Retreives data from repo directly */
     getDependentVarData: async function (projectName:string, depName:string, page?:string):Promise<{images:ImageData[], next_page?:string, previous_page?:string}>{
         try{
             let res:string = await invoke("get_data_for_class", {projectName, depName, page})

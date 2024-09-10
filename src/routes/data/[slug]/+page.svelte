@@ -16,7 +16,7 @@
         console.log(`Deleting ${filePath} from ${projectName}`)    
         try{
 
-            await invoke("delete_data_for_class", {projectName,filePath})
+            await invoke("remove_image", {projectName,filePath})
         }catch(err){
             console.error(`Unable to delete object at ${filePath}. ${err}`)
         }
@@ -29,6 +29,13 @@
         isLoading=false
     }
 
+    async function handleKeep(filePath:string) {
+        try{
+            await invoke("keep_data_for_class", {projectName, filePath})
+        }catch(err){
+            console.error(`HandleKeepFailed. ${err}`)
+        }
+    }
 
 </script>
 <div>
@@ -37,5 +44,5 @@
     {/if}
     <h1>{slug}</h1>
     <button class="button-less fake-link cursor" on:click={()=>history.back()}>Back</button>
-    <ImageDataList data={imageData.data} handleDelete={deleteObject} handlePage={handlePage}/>
+    <ImageDataList data={imageData.data} handleDelete={deleteObject} handlePage={handlePage} handleKeep={handleKeep}/>
 </div>

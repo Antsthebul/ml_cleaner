@@ -21,7 +21,7 @@ pub struct ImageListResult{
 
 #[derive(Deserialize, Serialize)]
 pub struct ImageObject{
-    b64: String,
+    pub b64: String,
     pub file_path:String,
 }
 
@@ -162,14 +162,25 @@ pub async fn get_data_for_class(self, path:&str, page:&str)->Result<ImageListRes
     }
 
     pub async fn create_sync_file(self, file_name:&str, text_lines:&[u8]) -> Result<(), LakeClientError>{
-    println!("Creating sync file");
+        println!("Creating sync file");
         self.client.put_object(file_name, text_lines).await
-        .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
         
         println!("Sync file created..\n");
 
         Ok(())
     }    
+
+    pub async fn get_data_for_image(self, file_name:&str) -> Result<ImageObject, LakeClientError>{
+        let res = self.client.get_object(file_name).await
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+        
+        Ok(ImageObject{
+            b64:BASE64_STANDARD.encode(res.bytes().to_vec()),
+            file_path:file_name.to_owned(),
+        })
+  
+    }
 }
 
 impl  fmt::Display for LakeClientError {

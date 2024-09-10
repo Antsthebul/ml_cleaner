@@ -1,4 +1,4 @@
-import { ProjectAPI } from '$lib'
+import { ImageDataAPI, ProjectAPI } from '$lib'
 import type { ImageData } from '$lib/global_types.js'
 
 export async function load({params, url}){
@@ -7,9 +7,8 @@ export async function load({params, url}){
     let projName = url.searchParams.get("project")
     let page = ""
     try{
-        let res = await ProjectAPI.getDependentVarData(projName as string, slug, page)
-        console.log("Load classs data => ", res)
-        return {data:res}
+        let res = await ImageDataAPI.getUnverifiedImages(projName as string, slug)
+        return {data:{images:res}}
     }catch(err){
         console.error("[Failed] Load dependent data. ", err)
     }

@@ -48,5 +48,6 @@ export interface Configuration{
 
 export interface ImageData{
     b64:string,
-    file_path:string
+    file_path:string,
+    verified?:boolean
 }
