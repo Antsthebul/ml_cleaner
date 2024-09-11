@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { ProjectAPI } from '$lib';
+	import { ImageDataAPI, ProjectAPI } from '$lib';
 	import { Loader } from '$lib';
 	import ImageDataList from '$lib/components/ImageData/ImageDataList.svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
@@ -24,7 +24,7 @@
 
     async function handlePage(page:string){
         isLoading = true
-        let res = await ProjectAPI.getDependentVarData(projectName as string, slug, page)
+        let res = await ImageDataAPI.getUnverifiedImages(projectName as string, slug, page)
         imageData = {data:res}
         isLoading=false
     }

@@ -45,7 +45,11 @@ export interface ConfigurationResponse{
 export interface Configuration{
     default_machine:string | null
 }
-
+export interface ImageDataCollection{
+    images: ImageData[],
+    previous_page:string | null,
+    next_page:string | null
+}
 export interface ImageData{
     b64:string,
     file_path:string,

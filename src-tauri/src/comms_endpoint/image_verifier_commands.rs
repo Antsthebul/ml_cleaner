@@ -21,8 +21,13 @@ pub async fn get_class_names(project_name:&str) -> Result<String, String>{
 }
 
 #[tauri::command]
-pub async fn get_unverified_images_for_class(project_name:&str, class_name:&str) ->Result<String, String>{
-    let res = image_verifier_service::get_unverified_images_for_class(project_name, class_name).await
+pub async fn get_unverified_images_for_class(project_name:&str, class_name:&str, page:&str) ->Result<String, String>{
+    println!("Get unverified images for class '{}' in project '{}' page '{}'", project_name, class_name, page);
+    let mut paginator = None;
+    if !page.is_empty(){
+        paginator = Some(page);
+    };
+    let res = image_verifier_service::get_unverified_images_for_class(project_name, class_name, paginator).await
      .map_err(|err|serialize_error(err.to_string()))?;
 
     Ok(serialize_response("data".parse().unwrap(), res))   

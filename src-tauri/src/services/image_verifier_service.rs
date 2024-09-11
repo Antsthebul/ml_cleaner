@@ -1,13 +1,20 @@
 use std::fmt;
 
 use crate::services::data_lake_service::{list_all_classes, get_data_for_class, delete_data_for_class};
-use app::components::adapters::image_verifier::{ImageVerifiedRecord, ImageVerifierClient, ImageVerifierError};
+use app::components::adapters::image_verifier::{ImageVerifiedRecord, ImageVerifierClient, ImageVerifierError, Pagination};
 use serde::{Deserialize, Serialize};
 
 use super::data_lake_service;
 
 #[derive(Debug)]
 pub struct ImageStoreServiceError(String);
+
+#[derive(Serialize, Deserialize)]
+pub struct ImageCollection{
+    images:Vec<ImageMeta>,
+    previous_page:Option<String>,
+    next_page:Option<String>
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct ImageMeta{
@@ -98,15 +105,15 @@ pub async fn get_all_classes() -> Result<Vec<String>, ImageStoreServiceError>{
 
 }
 
-pub async fn get_unverified_images_for_class(project_name:&str, class_name:&str)->Result<Vec<ImageMeta>, ImageStoreServiceError>{
+pub async fn get_unverified_images_for_class(project_name:&str, class_name:&str, page:Option<&str>)->Result<ImageCollection, ImageStoreServiceError>{
     let mut verifier_client = ImageVerifierClient::new().await.unwrap();
 
-    let image_paths = verifier_client.get_unverified_images_for_class(class_name).await
+    let image_paths = verifier_client.get_unverified_images_for_class(class_name, page).await
         .map_err(|err|ImageStoreServiceError(err.to_string()))?;
 
     let mut results: Vec<ImageMeta> = vec![];
 
-    for p in image_paths{
+    for p in image_paths.0{
         let tmp = data_lake_service::get_data_by_path(project_name, &p).await
             .map_err(|err|ImageStoreServiceError(err.to_string()))?;
         
@@ -115,7 +122,8 @@ pub async fn get_unverified_images_for_class(project_name:&str, class_name:&str)
             file_path:p
         })
     };
-    Ok(results)
+    let paginator = image_paths.1;
+    Ok(ImageCollection { images: results, previous_page:paginator.previous_page, next_page:paginator.next_page })
 }
 
 pub async fn verify_image(file_path:&str)-> Result<(), ImageStoreServiceError>{

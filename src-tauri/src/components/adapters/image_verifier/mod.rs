@@ -1,9 +1,14 @@
 // This module is to acts as a tracking/sync logic for
 // verifiying images.
-
+use base64::prelude::*;
 use core::fmt;
 // use postgres::{Client, NoTls};
 use tokio_postgres::{NoTls, Error, Client};
+
+pub struct Pagination {
+    pub previous_page:Option<String>,
+    pub next_page:Option<String>
+}
 
 #[derive(Debug)]
 pub enum ImageVerifierError{
@@ -100,16 +105,41 @@ impl ImageVerifierClient{
         
         Ok(rows.iter().map(|r|r.get::<usize, String>(0)).collect())
     }
-    /// Will only return file_paths. This is the file_path related to the
-    /// ''data lake/repository
-    pub async fn get_unverified_images_for_class(&mut self, class_name:&str) -> Result<Vec<String>, ImageVerifierError>{
+    /// Will only return file_paths. Paginates by a base64 encoded id. file_paths retuned are related to the
+    /// data lake/repository
+    pub async fn get_unverified_images_for_class(&mut self, class_name:&str, page:Option<&str>) -> Result<(Vec<String>, Pagination), ImageVerifierError>{
+        
+        let mut query_offset = 0;
+
+        if let Some(val) = page{
+            let num = BASE64_STANDARD.decode(val).unwrap();
+            let num_string =  String::from_utf8(num).unwrap();
+            query_offset = num_string.parse::<i64>().unwrap();
+        }
+
         let class_id = self.get_class_id_by_name(class_name).await
             .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
 
-        let rows = self.client.query("SELECT file_path FROM verified_images WHERE verified=false and class_id=$1 LIMIT 10", &[&class_id]).await
+
+        let mut rows = self.client.query("SELECT file_path FROM verified_images WHERE verified=false and class_id=$1 ORDER BY id LIMIT 11 OFFSET $2", &[&class_id, &query_offset]).await
             .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
         
-        Ok(rows.iter().map(|r|r.get::<usize, String>(0)).collect())
+        let mut next_page = None;
+        let mut previous_page = None;
+        if query_offset != 0{
+            previous_page = Some(BASE64_STANDARD.encode(format!("{}",query_offset - 10)));
+        };
+
+        if rows.len() > 10{
+
+            rows.pop();
+            let next_start = query_offset + 10;
+
+            next_page = Some(BASE64_STANDARD.encode(format!("{}", next_start)));
+        }
+        let pagination = Pagination{next_page, previous_page};
+
+        Ok((rows.iter().map(|r|r.get::<usize, String>(0)).collect(), pagination))
 
     }
 

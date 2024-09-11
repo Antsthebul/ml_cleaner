@@ -1,4 +1,4 @@
-import type { ImageData } from "$lib/global_types";
+import type { ImageData, ImageDataCollection } from "$lib/global_types";
 import { invoke } from "@tauri-apps/api/tauri";
 
 export default {
@@ -14,9 +14,12 @@ export default {
             throw err
         }
     },
-    getUnverifiedImages: async function (projectName:string, className:string): Promise<ImageData[]>{
+    getUnverifiedImages: async function (projectName:string, className:string, page:string|null): Promise<ImageDataCollection>{
+        if (!page){
+            page = ""
+        }
         try{
-            let response:string = await invoke("get_unverified_images_for_class", {projectName, className})
+            let response:string = await invoke("get_unverified_images_for_class", {projectName, className, page})
             let result = JSON.parse(response)
             if (result.data){
                 return result.data

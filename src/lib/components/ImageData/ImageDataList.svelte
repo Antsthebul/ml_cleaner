@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { ImageData } from "$lib/global_types";
+	import type { ImageData, ImageDataCollection } from "$lib/global_types";
 	import ListComponent from "../common/ListComponent.svelte";
 	import ImageDataListItem from "./ImageDataListItem.svelte";
 
-    export let data:{images:ImageData[], next_page?:string, previous_page?:string}
+    export let data: ImageDataCollection
 	export let handleDelete:(filePath:string)=>void
 	export let handleKeep:(filePath:string) => void
 	export let handlePage:any
