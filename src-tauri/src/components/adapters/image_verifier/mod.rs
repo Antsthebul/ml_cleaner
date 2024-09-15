@@ -2,6 +2,7 @@
 // verifiying images.
 use base64::prelude::*;
 use core::fmt;
+use std::collections::HashMap;
 // use postgres::{Client, NoTls};
 use tokio_postgres::{NoTls, Error, Client};
 
@@ -23,6 +24,7 @@ pub enum ImageVerifierError{
 pub struct ImageVerifierClient {
     client: Client
 }
+
 
 pub struct ImageVerifiedRecord{
     pub class_id:i32,
@@ -165,8 +167,28 @@ impl ImageVerifierClient{
 
     pub async fn delete_image(&mut self, file_path:&str) -> Result<(), ImageVerifierError>{
         self.client.query("DELETE from verified_images where file_path=$1",&[&file_path]).await
-        .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
+            .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
         Ok(())        
+    }
+
+    /// Returns a list of classes and their related 
+    /// file_paths
+    pub async fn get_all_images(&mut self) -> Result<HashMap<String, Vec<String>>, ImageVerifierError>{
+        let rows = self.client.query("SELECT c.name, f.file_path FROM verified_images f JOIN classes c ON c.id = f.class_id", &[]).await
+            .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
+        
+        let mut h:HashMap<String, Vec<String>> = HashMap::new();
+        for row in rows{    
+            let class_name = row.get(0);
+            let file_path = row.get(1);
+            if let Some(v) = h.get_mut(&class_name){
+                v.push(file_path);
+            }else{
+                h.insert(class_name, vec![file_path]);
+            }
+
+        };
+        Ok(h)
     }
 
 }

@@ -1,10 +1,10 @@
 use std::{collections::HashMap, io::BufReader};
 use crate::common::response_types::project_responses::{DeploymentResponse, FileDataResponse, ProjectResponse};
-use app::{file_config::{Project,Configuration},
-    // get_classes_data
-    };
+use app::file_config::{Configuration, FileAttr, Project};
 use serde_json::Value;
 use crate::common::response_types::{ serialize_error, serialize_response};
+
+use super::{config_service, data_lake_service};
 
 #[derive(Debug)]
 pub struct ProjectError(String);
@@ -26,8 +26,8 @@ pub async fn get_all_projects()->Result<Vec<Project>, ProjectError>{
 /// Returns serialized Result or Error. The serialized result is
 /// a project with other additional metadata.
 pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Result<DeploymentResponse, ProjectError>{
-    let project = Configuration::get_project_by_project_name(project_name)
-    .map_err(|err|ProjectError(err.to_string()))?;
+    let project = config_service::get_project_by_project_name(project_name)
+        .map_err(|err|ProjectError(err.to_string()))?;
 
     let deployment = project.get_project_deployment(deploy_name).unwrap();
 
@@ -63,8 +63,9 @@ pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Resu
 
 pub async fn get_project_by_project_name(project_name:&str)-> Result<ProjectResponse<Project>, ProjectError>{
 
-    let project = Configuration::get_project_by_project_name(project_name)
-    .map_err(|err|ProjectError(err.to_string()))?;
+    let mut project = config_service::get_project_by_project_name(project_name)
+        .map_err(|err|ProjectError(err.to_string()))?;
+
     
     let file = std::fs::File::open(".cache/map.json").unwrap();
     let reader = BufReader::new(file);
@@ -72,6 +73,35 @@ pub async fn get_project_by_project_name(project_name:&str)-> Result<ProjectResp
     let val = &contents[project_name];
     let res = String::from_utf8(val.to_vec()).unwrap();
     let classes = res.split_terminator("\n").map(|val|val.to_owned()).collect();
+    
+    let base_train_data_path = "base/test.json";
+    let base_test_data_path = "base/test.json";
+
+    let mut train_exists = false;
+    let mut test_exists = false;
+    
+    // Check if files exists
+    match data_lake_service::get_file(project_name, &base_train_data_path).await{
+        Err(err) => { 
+            let err_string = err.to_string();
+            if !err_string.contains("does not exist"){
+                return Err(ProjectError(err_string))
+            }
+        },
+        Ok(_)=>{train_exists=true}
+    };
+    match data_lake_service::get_file(project_name, &base_test_data_path).await{
+        Err(err) => { 
+            let err_string = err.to_string();
+            if !err_string.contains("does not exist"){
+                return Err(ProjectError(err_string))
+            }
+        },
+        Ok(_)=>{test_exists=true}
+    };    
+    project.train_file = Some(FileAttr{path:base_train_data_path.to_owned(), exists:train_exists});
+    project.test_file = Some(FileAttr{path:base_test_data_path.to_owned(), exists:test_exists});
+
     let pr = ProjectResponse{
         project,
         classes

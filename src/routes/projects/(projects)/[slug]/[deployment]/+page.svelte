@@ -37,6 +37,7 @@
 	import { invoke } from "@tauri-apps/api/tauri";
     import type {Machine, ProjectMachine, Deployment} from "$lib/global_types";
 	import {ProjectMachineSideDrawer} from "$lib";
+	import { page } from "$app/stores";
 
 
 	export let data
@@ -46,7 +47,7 @@
 		files:null,
 		machines:[],
 	}
-	
+	let slug = $page.params.slug
 	let curDeployment:Deployment|null = data.data ?? {...INIT_DEPLOYMENT}
 
     $: allowEditClassesPath = false;
@@ -137,6 +138,11 @@
         return text + " machines"
     }
 
+    async function handleGenerateTestTrainData(){
+        await invoke("generate_test_train_data", {projectName:slug})
+        return
+    }
+
 </script>
 
 <section>
@@ -188,7 +194,7 @@
             </div>
         {:else}
 
-            <button on:click={()=>setAllowEditClassesPath(true)} class="display-block">Add</button>
+            <button on:click={()=>handleGenerateTestTrainData()} class="button button-info">Generate Test/Train Data</button>
         {/if}    
     </div>
     <div id="main">

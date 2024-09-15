@@ -21,8 +21,9 @@ export  async function loadProjects(){
         let result:ResponseType<Project[]> = JSON.parse(response); 
         if (result.data){
             projects.set(result.data)
+            return
         }
-        throw new APIError(result.error)
+        throw new Error(`LoadProject failed. ${result.error}`)
     }catch(err){
         throw err
     }

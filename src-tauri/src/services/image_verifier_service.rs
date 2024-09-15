@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use crate::services::data_lake_service::{list_all_classes, get_data_for_class, delete_data_for_class};
 use app::components::adapters::image_verifier::{ImageVerifiedRecord, ImageVerifierClient, ImageVerifierError, Pagination};
@@ -146,4 +146,13 @@ pub async fn remove_image(project_name:&str, file_path:&str) -> Result<(), Image
         .map_err(|err|ImageStoreServiceError(err.to_string()))?;
 
     Ok(())
+}
+
+pub async fn list_all_images_by_class() -> Result<HashMap<String, Vec<String>>, ImageStoreServiceError>{
+    let mut verifier_client = ImageVerifierClient::new().await.unwrap();
+
+    Ok(verifier_client.get_all_images().await
+        .map_err(|err|ImageStoreServiceError(err.to_string()))?)
+           
+
 }

@@ -4,6 +4,7 @@ pub mod project_service;
 pub mod config_service;
 pub mod data_lake_service;
 pub mod image_verifier_service;
+pub mod model_hub_service;
 
 use app::file_config::Configuration;
 

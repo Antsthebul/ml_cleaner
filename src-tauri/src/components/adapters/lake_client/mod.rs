@@ -43,6 +43,8 @@ pub struct LakeClient{
 }
 
 impl LakeClient{
+
+    /// Returns a ready-to-use client in the given region.
     pub fn new(bucket_name:&str)-> Result<LakeClient, LakeClientError>{
         let region = "us-east-2".parse().unwrap();
     
@@ -52,42 +54,42 @@ impl LakeClient{
         }
         
     }
-/// Returns a paginated list of 'in-storage' image URLs. Lookups performed by complete path
-/// ie. 'data/images/banangas', delimiter="" . Which means get everything in this path
-pub async fn get_data_for_class(self, path:&str, page:&str)->Result<ImageListResult, LakeClientError>{
-    let mut continuation_token:Option<_> = None;
+    /// Returns a paginated list of 'in-storage' image URLs. Lookups performed by complete path
+    /// ie. 'data/images/banangas', delimiter="" . Which means get everything in this path
+    pub async fn get_data_for_class(self, path:&str, page:&str)->Result<ImageListResult, LakeClientError>{
+        let mut continuation_token:Option<_> = None;
 
-    if !page.is_empty(){
-        continuation_token = Some(page.to_owned());
-    };
+        if !page.is_empty(){
+            continuation_token = Some(page.to_owned());
+        };
 
-    let res = self.client.list_page(path.to_owned(),Some("".to_string()), continuation_token.clone(), None, Some(10)).await
-        .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+        let res = self.client.list_page(path.to_owned(),Some("".to_string()), continuation_token.clone(), None, Some(10)).await
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
 
-    // Not sure why this is returning a list?
-    let contents = &res.0.contents;
+        // Not sure why this is returning a list?
+        let contents = &res.0.contents;
 
-    let mut images = Vec::<ImageObject>::new();
-    for c in contents{
+        let mut images = Vec::<ImageObject>::new();
+        for c in contents{
 
-        let data = self.client.get_object(&c.key).await
-        .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+            let data = self.client.get_object(&c.key).await
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
 
-        images.push(
-            ImageObject{
-                b64:BASE64_STANDARD.encode(data.bytes().to_vec()),
-                file_path:c.key.to_owned(),
-            }
-        );
+            images.push(
+                ImageObject{
+                    b64:BASE64_STANDARD.encode(data.bytes().to_vec()),
+                    file_path:c.key.to_owned(),
+                }
+            );
 
-    }
+        }
 
-    Ok(    ImageListResult{
-        previous_page:res.0.continuation_token,
-        images:images,
-        next_page:res.0.next_continuation_token
-    })
-} 
+        Ok(    ImageListResult{
+            previous_page:res.0.continuation_token,
+            images:images,
+            next_page:res.0.next_continuation_token
+        })
+    } 
 
     /// Delete actual object from bucket. 
     pub async fn delete_object(self, file_path:&str)->Result<(), LakeClientError>{
@@ -180,6 +182,23 @@ pub async fn get_data_for_class(self, path:&str, page:&str)->Result<ImageListRes
             file_path:file_name.to_owned(),
         })
   
+    }
+    /// Generic file retreival method
+    pub async fn get_file(self, file_path:&str)->Result<Bytes, LakeClientError>{
+        println!("[Log] Getting file {}", file_path);
+        let res = self.client.get_object(file_path).await
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+
+        Ok(res.bytes().clone())
+    }
+
+    pub async fn write_file(self, file_path:&str, content:&[u8]) -> Result<(), LakeClientError>{
+        let res = self.client.put_object(file_path, content).await
+            .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
+    
+        println!("Saved to location {}", res);
+        println!(" {:?}", res);
+        Ok(())
     }
 }
 

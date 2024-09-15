@@ -1,6 +1,8 @@
 use app::{components::adapters::lake_client, ImageObject, LakeClient};
-use crate::{common::response_types::{self, serialize_response}, services::project_service};
+use crate::services::project_service;
+use bytes::Bytes;
 
+use super::config_service;
 pub struct LakeServiceError(String);
 
 
@@ -11,11 +13,10 @@ impl std::fmt::Display for LakeServiceError{
 }
 
 async fn get_client_by_project(project_name:&str) -> Result<LakeClient, LakeServiceError>{
-    let proj = project_service::get_project_by_project_name(project_name).await
-    .map_err(|err|LakeServiceError(err.to_string()))?;
+    let proj = config_service::get_project_by_project_name(project_name)
+        .map_err(|err|LakeServiceError(err.to_string()))?;
 
-
-    Ok(LakeClient::new(&proj.project.repository.name)
+    Ok(LakeClient::new(&proj.repository.name)
         .map_err(|err|LakeServiceError(err.to_string()))?)
 
 }
@@ -56,7 +57,7 @@ pub async fn delete_data_for_class( project_name:&str,file_name:&str)-> Result<(
 /// Lists all classes found in data lake. Classes are folder/file names
 pub async fn list_all_classes(project_name:&str) -> Result<Vec<String>, LakeServiceError>{
     let proj = project_service::get_project_by_project_name(project_name).await
-    .map_err(|err|LakeServiceError(err.to_string()))?;
+        .map_err(|err|LakeServiceError(err.to_string()))?;
 
     let lc = LakeClient::new(&proj.project.repository.name)
         .map_err(|err|LakeServiceError(err.to_string()))?;
@@ -65,11 +66,31 @@ pub async fn list_all_classes(project_name:&str) -> Result<Vec<String>, LakeServ
         .map_err(|err|LakeServiceError(err.to_string()))?)
     
 }
-
+/// Returns an images looked up within the specific project
 pub async fn get_data_by_path(project_name:&str, file_path:&str) -> Result<ImageObject, LakeServiceError>{
     let lc = get_client_by_project(project_name).await
         .map_err(|err|LakeServiceError(err.to_string()))?;
 
     lc.get_data_for_image(file_path).await
         .map_err(|err|LakeServiceError(err.to_string()))
+}
+
+/// Thin file retreival wrapper to return dta as bytessdwe
+pub async fn get_file(project_name:&str, file_path:&str) -> Result<Bytes, LakeServiceError>{
+    let lc = get_client_by_project(project_name).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    Ok(lc.get_file(file_path).await
+    .map_err(|err|LakeServiceError(err.to_string()))?)
+}
+
+/// Generic wrapper to write files to associated data lake repository
+pub async fn write_file(project_name:&str, file_path:&str, contents:&[u8]) -> Result<(), LakeServiceError>{
+    let lc = get_client_by_project(project_name).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    lc.write_file(file_path, contents).await
+        .map_err(|err|LakeServiceError(err.to_string()))?;
+
+    Ok(())
 }

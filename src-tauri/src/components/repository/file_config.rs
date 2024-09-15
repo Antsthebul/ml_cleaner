@@ -57,7 +57,15 @@ pub struct Deployment {
 pub struct Project{
     pub name: String,
     pub deployments: Vec<Deployment>,
-    pub repository: Repository
+    pub repository: Repository,
+    pub train_file: Option<FileAttr>,
+    pub test_file:Option<FileAttr>
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct FileAttr{
+    pub path: String,
+    pub exists: bool
 }
 impl Project{
     pub fn get_project_deployment(&self, deploy_name:&str)->Result<Deployment, ConfigurationFileError>{
