@@ -13,6 +13,7 @@ pub async fn sync_data(project_name:&str)-> Result<String, String>{
 
 #[tauri::command]
 pub async fn get_class_names(project_name:&str) -> Result<String, String>{
+    println!("[ImageVerfiierCommand] fetching class names for project '{}'", project_name);
     let res = image_verifier_service::get_all_classes().await
         .map_err(|err|serialize_error(err.to_string()))?;
 

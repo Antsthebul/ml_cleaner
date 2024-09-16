@@ -12,7 +12,6 @@ pub struct FileDataResponse{
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectResponse<T>{
     pub project:T,
-    pub classes: Vec<String>
 }
 
 #[derive(Debug, Deserialize, Serialize)]

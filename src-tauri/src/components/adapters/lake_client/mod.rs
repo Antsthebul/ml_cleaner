@@ -197,7 +197,6 @@ impl LakeClient{
             .map_err(|err| LakeClientError::ObjectRetrievalError(err.to_string()))?;
     
         println!("Saved to location {}", res);
-        println!(" {:?}", res);
         Ok(())
     }
 }

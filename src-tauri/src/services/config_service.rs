@@ -18,6 +18,8 @@ crate::services::get_configuration_file_for_commands()
     .map_err(|err|ConfigSerivceError(err.to_string()))
 }
 
+/// Returns a bare configuration for a project. To be used when
+/// minimal data is needed related to a Project and the users config
 pub fn get_project_by_project_name(project_name:&str) -> Result<Project, ConfigSerivceError>{
     Ok(Configuration::get_project_by_project_name(project_name)
         .map_err(|err|ConfigSerivceError(err.to_string()))?)    

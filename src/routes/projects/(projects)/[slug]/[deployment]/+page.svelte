@@ -138,10 +138,7 @@
         return text + " machines"
     }
 
-    async function handleGenerateTestTrainData(){
-        await invoke("generate_test_train_data", {projectName:slug})
-        return
-    }
+
 
 </script>
 
@@ -183,19 +180,7 @@
             </div> -->
         </div>
         <!-- <span class="display-block mt-10 mb-5"><b>Classes Key/File: </b>{curDeployment.classes_file}</span> -->
-        <span class="display-block mb-5"><b>File(s): </b></span>
-        
-        {#if allowEditClassesPath}
-            <div>
-                <input />
-                <input bind:value={fileNameInput} on:input={handleFileNameInput}/>
-                <button on:click={handleSaveUpdateEnv}>Save</button>
-                <button on:click={()=>setAllowEditClassesPath(false)}>Cancel</button>
-            </div>
-        {:else}
-
-            <button on:click={()=>handleGenerateTestTrainData()} class="button button-info">Generate Test/Train Data</button>
-        {/if}    
+        <span class="display-block mb-5"><b>File(s): </b></span>  
     </div>
     <div id="main">
 

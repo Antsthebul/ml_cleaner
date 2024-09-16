@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt, fs, io::{self, prelude::*},net, path, str::FromStr};
+use std::{collections::HashMap, fmt, fs, io::{self, prelude::*},net::{self, Ipv4Addr}, path, str::FromStr};
 use toml;
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +30,7 @@ impl FromStr for ConfigurationKey{
 }
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ProjectMachine{
+    pub provider:String,
     id:String,
     name:String,
     machine_type:String,
@@ -75,6 +76,28 @@ impl Project{
         }
 
     }
+}
+impl Deployment {
+    pub fn get_machine_by_machine_id(self, machine_id:&str) -> Result<ProjectMachine, ConfigurationFileError>{
+        for m in self.machines{
+            if m.id == machine_id{
+                return Ok(m)
+            }
+        }
+        Err(ConfigurationFileError(format!("Machine ID '{}' not found", machine_id)))
+    }
+    /// Reteives a Machine using the Machines IPv4 Addr
+    pub fn get_machine_by_ip(self, ip_address:Ipv4Addr) -> Result<ProjectMachine, ConfigurationFileError>{
+        for m in self.machines{
+            if let Some (ip_addr) = m.ip_addr{
+                if ip_addr== ip_address{
+                    return Ok(m)
+                }
+            } 
+        }
+        Err(ConfigurationFileError(format!("Machine IP addr '{}' not found", ip_address)))
+    }
+
 }
 
 impl fmt::Display for ConfigurationFileError {

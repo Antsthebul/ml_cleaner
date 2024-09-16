@@ -1,7 +1,10 @@
+//**This API handler solely deals with relating to the un/verified images*/
+
 import type { ImageData, ImageDataCollection } from "$lib/global_types";
 import { invoke } from "@tauri-apps/api/tauri";
 
 export default {
+
     getAllClasses:async function(projectName:string): Promise<string[]>{
         try{
             let response:string = await invoke("get_class_names", {projectName})

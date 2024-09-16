@@ -12,7 +12,7 @@ pub async fn get_all_projects()->Result<String, String>{
 
 #[tauri::command]
 pub async fn get_project_by_project_name(project_name:&str)-> Result<String, String>{
-    
+    println!("[CommandEndpoint] Fetching project '{}'", project_name);
     let project = project_service::get_project_by_project_name(project_name).await
         .map_err(|err|serialize_error(err))?;
 

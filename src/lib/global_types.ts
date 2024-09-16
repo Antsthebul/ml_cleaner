@@ -1,9 +1,15 @@
 export interface Project {
     name: string
-    deployments: Deployment[]
+    deployments: Deployment[],
+    train_file: FileAttr,
+    test_file: FileAttr
 
 }
-export type ProjectResponse = {project:Project, classes:string[]}
+export interface FileAttr{
+    path:string,
+    exists:boolean
+}
+export type ProjectResponse = {project:Project}
 export interface Deployment {
     name: string
     files: any,

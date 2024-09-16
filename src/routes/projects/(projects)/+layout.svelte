@@ -14,7 +14,7 @@
 
     let slug = $page.params.slug
 
-    let curProject = data.data.project ?? INIT_PROJECT
+    let curProject = data.project ?? INIT_PROJECT
     let selectedDeployment = ''
 
     async function deleteProject(){

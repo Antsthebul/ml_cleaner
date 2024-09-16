@@ -1,6 +1,7 @@
 import { ImageDataAPI } from "$lib"
 
 export async function load({params}){
+    console.log("Loading - Project Detail Page")
     try{
         let data = await ImageDataAPI.getAllClasses(params.slug)
         return {classes:data}

@@ -14,10 +14,24 @@
 <script lang="ts">
 	import { SideDrawer } from "$lib";
 	import type { ProjectMachine } from "$lib/global_types";
+	import { invoke } from "@tauri-apps/api/tauri";
+	import { page } from '$app/stores';
 
     export let machines: ProjectMachine[] = []
     export let showSideDrawer = false
+    
+    let slug = $page.params.slug
+    let deployment = $page.params.deployment
 
+    async function handleTrain(machineId:string){
+        console.log("Sending 'train' request for model ",machineId)
+        try{
+
+            await invoke("train_model", {deploymentName:deployment, projectName:slug, machineId})
+        }catch(err){
+            console.log("Train request failed. ", err)
+        }
+    }
 </script>
 
 <SideDrawer bind:showSideDrawer={showSideDrawer}>
@@ -38,7 +52,7 @@
             <div class="display-flex gap-10 justify-content-center mt-5">
                     <button class="button button-option">Show Runs</button>
                     <button class="button button-danger">Stop</button>
-                    <button class="button button-success" on:click={()=>{}}>Train</button>
+                    <button class="button button-success" on:click={()=>handleTrain(machine.id)}>Train</button>
             </div>
 
         </div>

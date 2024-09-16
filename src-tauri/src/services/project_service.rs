@@ -61,50 +61,42 @@ pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Resu
     Ok(dr)
 }
 
+/// Returns a Project WITH dynamic attribute populates. This
+/// is different from the config, which returns a bare config provided 
+/// attribute on a Project
 pub async fn get_project_by_project_name(project_name:&str)-> Result<ProjectResponse<Project>, ProjectError>{
 
     let mut project = config_service::get_project_by_project_name(project_name)
         .map_err(|err|ProjectError(err.to_string()))?;
 
-    
-    let file = std::fs::File::open(".cache/map.json").unwrap();
-    let reader = BufReader::new(file);
-    let contents:HashMap<String, Vec<u8>> = serde_json::from_reader(reader).unwrap();
-    let val = &contents[project_name];
-    let res = String::from_utf8(val.to_vec()).unwrap();
-    let classes = res.split_terminator("\n").map(|val|val.to_owned()).collect();
-    
-    let base_train_data_path = "base/test.json";
-    let base_test_data_path = "base/test.json";
+    let base_train_data_path = "data/base/test.json";
+    let base_test_data_path = "data/base/test.json";
 
-    let mut train_exists = false;
-    let mut test_exists = false;
-    
     // Check if files exists
-    match data_lake_service::get_file(project_name, &base_train_data_path).await{
-        Err(err) => { 
-            let err_string = err.to_string();
-            if !err_string.contains("does not exist"){
-                return Err(ProjectError(err_string))
-            }
-        },
-        Ok(_)=>{train_exists=true}
-    };
-    match data_lake_service::get_file(project_name, &base_test_data_path).await{
-        Err(err) => { 
-            let err_string = err.to_string();
-            if !err_string.contains("does not exist"){
-                return Err(ProjectError(err_string))
-            }
-        },
-        Ok(_)=>{test_exists=true}
-    };    
+    let train_exists = check_if_file_exists(project_name, &base_train_data_path).await?; 
+    let test_exists = check_if_file_exists(project_name, &base_test_data_path).await?;
+  
     project.train_file = Some(FileAttr{path:base_train_data_path.to_owned(), exists:train_exists});
     project.test_file = Some(FileAttr{path:base_test_data_path.to_owned(), exists:test_exists});
 
     let pr = ProjectResponse{
         project,
-        classes
     };
     Ok(pr)
+}
+
+/// Checks if file exists in repository. If an error is encounture, 
+/// returns error
+pub async fn check_if_file_exists(project_name:&str, file_path:&str) -> Result<bool, ProjectError>{
+    match data_lake_service::get_file(project_name, &file_path).await{
+        Err(err) => { 
+            let err_string = err.to_string();
+            if !err_string.contains("does not exist"){
+                return Err(ProjectError(err_string))
+            }else{
+                Ok(false)
+            }
+        },
+        Ok(_)=>Ok(true)
+    }
 }
