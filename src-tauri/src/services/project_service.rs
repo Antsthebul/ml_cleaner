@@ -1,8 +1,5 @@
-use std::{collections::HashMap, io::BufReader};
 use crate::common::response_types::project_responses::{DeploymentResponse, FileDataResponse, ProjectResponse};
 use app::file_config::{Configuration, FileAttr, Project};
-use serde_json::Value;
-use crate::common::response_types::{ serialize_error, serialize_response};
 
 use super::{config_service, data_lake_service};
 
@@ -46,17 +43,6 @@ pub async fn get_project_deployment(project_name:&str, deploy_name:&str) -> Resu
         machines:deployment.machines,
         files:None
     };
-    // let file_path = match &deployment.classes_file{
-    //     Some(file) => file,
-    //     // Return bare 'inititalized' 
-    //     None=>{
-    //         let res = serde_json::json!({"deployment":deployment, "classes_data":Vec::<String>::new()});
-    //         return Err(serialize_response("data".parse().unwrap(), res))}
-    // };
-    // // Add meta data. No need for 'response' struct
-    // let class_data = get_classes_data(file_path).await
-    // .map_err(|err|serialize_error(err.to_string()))?;
-    // let response = serde_json::json!({"deployment":deployment, "classes_data":class_data});
 
     Ok(dr)
 }

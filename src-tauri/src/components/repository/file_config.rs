@@ -31,7 +31,7 @@ impl FromStr for ConfigurationKey{
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ProjectMachine{
     pub provider:String,
-    id:String,
+    pub id:String,
     name:String,
     machine_type:String,
     pub ip_addr: Option<net::Ipv4Addr>

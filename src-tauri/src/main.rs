@@ -5,11 +5,14 @@
 mod common;
 mod comms_endpoint;
 mod services;
-mod local_cache;
+mod cache_reg;
+mod daemon;
 
-use std::{ env, fs, path};
+use std::{ env, path};
 
 mod config;
+use app::{create_client, file_config::create_file_if_not_present};
+use daemon::{gather_existing_machines_in_config, run_daemon};
 // mod repository;
 use dotenvy;
 use crate::comms_endpoint::{
@@ -23,24 +26,12 @@ use crate::comms_endpoint::{
 
 
 fn main() {
-  // Startup functions
-  if let Err(_err) = load_env(){
-    println!("AWS ACCESS/SECRET KEYS must exist in .env file")
-  }
-
-
-  // Create local cache
-  if !path::Path::new(".cache/").exists(){
-    fs::create_dir(".cache/").expect("Cannot create local dir")
-  }
-
-
-  
+  startup_function();  
   
   tauri::Builder::default()
   .invoke_handler(tauri::generate_handler![
     //  Project commands
-     get_all_projects, get_project_by_project_name, get_project_deployment, 
+    get_all_projects, get_project_by_project_name, get_project_deployment, 
     get_config, get_data_for_class, remove_image,sync_data,
     // Image verifier commands
     get_class_names,get_unverified_images_for_class, keep_data_for_class,
@@ -52,6 +43,7 @@ fn main() {
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
+  println!("never makes its");
 }
 
 
@@ -64,4 +56,25 @@ fn load_env() -> Result<(), std::env::VarError>{
   env::var("AWS_SECRET_KEY")?;
   env::var("PAPERSPACE_API_KEY")?;
   Ok(())
+}
+
+fn startup_function(){
+  load_env().expect("should be failed to find requried env vars");
+  let _ = cache_reg::create_cache();
+  let config = create_file_if_not_present().unwrap();
+  let records = gather_existing_machines_in_config(&config);
+  if records.len() > 0 {
+    println!("Record got damn greater")
+  }else{
+    println!("0 recs homie")
+  }
+
+  for r in records{
+    println!("first record");
+    let client = create_client(r.provider.parse().unwrap()).unwrap();
+    tauri::async_runtime::spawn(async move {
+      run_daemon(client, r.machine_id).await;
+    });
+  };
+ 
 }
