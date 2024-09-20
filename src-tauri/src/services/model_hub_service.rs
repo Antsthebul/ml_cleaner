@@ -1,7 +1,7 @@
 use std::{fmt, collections::HashMap};
-use app::create_client;
+use app::{create_client, database::DbClient, state_check_daemon};
 use serde_json::json;
-use crate::cache_reg::update_cache;
+use crate::{cache_reg::update_cache};
 
 use super::{ 
     config_service, 
@@ -143,6 +143,7 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
     // We use the 'minimal' retreival method, since we only need provider
     let proj = config_service::get_project_by_project_name(project_name)
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
     let dep = proj.get_project_deployment(deployment_name)
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
@@ -151,6 +152,8 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
     
+    let db_client = DbClient::new().await
+    .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
     let ip_address = match mach.ip_addr{
         None=>{
@@ -158,17 +161,28 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
                 .map_err(|err| ModelHubServiceError(err.to_string()))?;
             
                 if let Some(v) = res.ip_address{
-                    
-                    let _ = update_cache("machine", &format!("{}", v))
-                        .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-                    v
+                        // TODO: Use k/v store as cache instead of DB
+                    let _ = db_client.execute("INSERT machine_state (machine_id, state, ip_address) VALUES ($1,$2,$3)",
+                    &[&machine_id,&res.state.to_string(),&format!("{:?}",res.ip_address) ] );
+                   v
                 }else{
                     return Err(ModelHubServiceError(String::from("No IP retrurns when attempt to train model")))
                 }
             },
         Some(ip)=>ip
     };
+    
+    let _ = update_cache("machine", &format!("{}", ip_address))
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let m_id = machine_id.to_owned();
+        
+
+    tauri::async_runtime::spawn(async move{
+        state_check_daemon(mach.provider ,m_id).await
+    });
+
+    // SSH into server, and run train command
     let _ = mdl_hub_client.train_model(ip_address).await
         .map_err(|err|ModelHubServiceError(err.to_string()))?;
 

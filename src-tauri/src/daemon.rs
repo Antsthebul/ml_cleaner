@@ -1,8 +1,8 @@
 // Background task runner
 
-use std::{time, net::Ipv4Addr, clone::Clone};
+use std::net::Ipv4Addr;
 
-use app::{file_config::Configuration, Client};
+use app::{file_config::Configuration};
 
 pub struct ModelHubRecord{
     pub machine_ip: Ipv4Addr,
@@ -30,13 +30,4 @@ pub fn gather_existing_machines_in_config(config:&Configuration)-> Vec<ModelHubR
     };
 
     records
-}
-
-pub async fn run_daemon(c:impl Client + Clone, machine_id:String){
-    println!("daemon run");
-    loop{
-        let client = c.clone();
-        client.get_machine_status(&machine_id).await;
-        tokio::time::sleep(time::Duration::from_millis(5000)).await;
-    }
 }

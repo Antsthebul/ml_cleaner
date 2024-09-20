@@ -6,7 +6,21 @@ use ssh2::Session;
 use crate::ClientMachineResponse;
 
 use super::{Client, ModelHubError};
+
 struct PaperSpaceClientError(String);
+
+#[derive(Serialize, Deserialize, Debug, Clone,PartialEq)]
+pub enum MachineState{
+    Off, 
+    Starting,
+    Stopping,
+    Restarting,
+    ServiceReady,
+    Ready,
+    Upgrading,
+    Provisioning
+
+}
 
 #[derive(Deserialize, Serialize)]
 struct Machines{
@@ -27,7 +41,36 @@ enum RequestType{
 }
 
 
-
+impl std::str::FromStr for MachineState{
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "off" => Ok(Self::Off),
+            "starting"=> Ok(Self::Starting), 
+            "stopping"=> Ok(Self::Stopping),
+            "restarting" => Ok(Self::Restarting),
+            "serviceready" => Ok(Self::ServiceReady),
+            "ready" => Ok(Self::Ready),
+            "upgrading"=>Ok(Self::Upgrading),
+            "provisioning" => Ok(Self::Provisioning),
+            _ => Err(())
+        }
+    }
+}
+impl fmt::Display for MachineState{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self{
+            Self::Ready=>write!(f, "{}","ready"),
+            Self::Off=>write!(f, "{}", "off"),
+            Self::Provisioning=>write!(f, "{}","provisioning"),
+            Self::Restarting=>write!(f, "{}","restarting"),
+            Self::ServiceReady=>write!(f, "{}","ServiceReady"),
+            Self::Stopping=>write!(f, "{}","stopping"),
+            Self::Upgrading=>write!(f, "{}","upgrading"),
+            Self::Starting=>write!(f, "{}", "starting")
+        }
+    }
+}
 impl std::str::FromStr for RequestType{
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -59,7 +102,7 @@ impl fmt::Display for Machine{
 pub struct Machine{
     id:String,
     name:String,
-    state: String,
+    state: MachineState,
     machine_type:String,
     public_ip_address: Option<Ipv4Addr>
 }
@@ -118,7 +161,7 @@ impl Client for PaperSpaceClient{
             ip_address = Some(ip_addr.to_string().parse().unwrap());
         };
         
-        Ok(ClientMachineResponse{ip_address:ip_address, state:state.to_string()})
+        Ok(ClientMachineResponse{ip_address:ip_address, state:state.as_str().unwrap().parse().unwrap()})
     }    
 
     /// Returns the machine status for given machine_id

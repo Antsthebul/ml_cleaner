@@ -6,6 +6,8 @@ use std::collections::HashMap;
 // use postgres::{Client, NoTls};
 use tokio_postgres::{NoTls, Error, Client};
 
+use crate::database::DbClient;
+
 pub struct Pagination {
     pub previous_page:Option<String>,
     pub next_page:Option<String>
@@ -34,14 +36,8 @@ pub struct ImageVerifiedRecord{
 
 impl ImageVerifierClient{
     pub async fn new() -> Result<ImageVerifierClient, ImageVerifierError>{
-        let (c, conn) = tokio_postgres::connect("host=host.docker.internal user=ml_cleaner password=ml_cleaner dbname=local_db", NoTls).await
-        .map_err(|err| ImageVerifierError::ClientConfigurationError(err.to_string()))?;
-
-        tokio::spawn(async move {
-            if let Err(e) = conn.await {
-                eprintln!("Connection err: {}", e)
-            }
-        });
+        let c = DbClient::new().await
+            .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
 
         Ok(ImageVerifierClient { client: c })
 

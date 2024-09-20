@@ -7,14 +7,16 @@ mod comms_endpoint;
 mod services;
 mod cache_reg;
 mod daemon;
+mod menu;
 
 use std::{ env, path};
 
 mod config;
-use app::{create_client, file_config::create_file_if_not_present};
-use daemon::{gather_existing_machines_in_config, run_daemon};
+use app::{create_client, file_config::create_file_if_not_present, state_check_daemon};
+use daemon::{gather_existing_machines_in_config};
 // mod repository;
 use dotenvy;
+use menu::build_menu;
 use crate::comms_endpoint::{
   project_commands::{get_all_projects, get_project_by_project_name, get_project_deployment},
   config_commands::get_config,
@@ -29,6 +31,7 @@ fn main() {
   startup_function();  
   
   tauri::Builder::default()
+  .menu(build_menu())
   .invoke_handler(tauri::generate_handler![
     //  Project commands
     get_all_projects, get_project_by_project_name, get_project_deployment, 
@@ -71,9 +74,8 @@ fn startup_function(){
 
   for r in records{
     println!("first record");
-    let client = create_client(r.provider.parse().unwrap()).unwrap();
-    tauri::async_runtime::spawn(async move {
-      run_daemon(client, r.machine_id).await;
+    tauri::async_runtime::spawn(async move{
+      state_check_daemon(r.provider,r.machine_id).await;
     });
   };
  
