@@ -46,4 +46,3 @@ pub fn update_cache(key:&str, value: &str) -> io::Result<()>{
     let _ = fs::write(".cache/state.json", contents.as_bytes())?;
     Ok(())
 }
-

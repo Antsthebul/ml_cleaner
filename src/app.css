@@ -63,6 +63,20 @@
         color:var(--option-orange);
     }
 }
+.button-success-disabled{
+    background-color: var(--success-green);
+    color:white;
+    pointer-events: none !important;
+    cursor:default !important;
+
+}
+.button-danger-disabled{
+    background-color: var(--red);
+    color:white;
+    pointer-events: none !important;
+    opacity: .2 !important;
+
+}
 
 .f-5{
     font-size:.6em;

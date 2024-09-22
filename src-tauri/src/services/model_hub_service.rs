@@ -130,12 +130,22 @@ pub async fn start_machine(machine_id:&str){
 
 
 
-pub async fn stop_machine(machine_id:&str){
-    // let pc = PaperSpaceClient::new();
-    // pc.handle_machine_run_state(machine_id, "stop").await
-    //     .map_err(|err|serialize_error(err))?;
+pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&str)-> Result<(), ModelHubServiceError>{
+    let proj = config_service::get_project_by_project_name(project_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let dep = proj.get_project_deployment(deployment_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let mach = dep.get_machine_by_machine_id(machine_id)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-    // Ok(serialize_success("success"))
+    let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
+
+    mdl_hub_client.handle_machine_run_state(machine_id, "stop").await
+    .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
+    Ok(())
 }
 
 
@@ -161,7 +171,8 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
                 .map_err(|err| ModelHubServiceError(err.to_string()))?;
             
                 if let Some(v) = res.ip_address{
-                        // TODO: Use k/v store as cache instead of DB
+                    println!("found IP inserting to db");
+                    // TODO: Use k/v store as cache instead of DB
                     let _ = db_client.execute("INSERT machine_state (machine_id, state, ip_address) VALUES ($1,$2,$3)",
                     &[&machine_id,&res.state.to_string(),&format!("{:?}",res.ip_address) ] );
                    v
@@ -171,7 +182,8 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
             },
         Some(ip)=>ip
     };
-    
+    println!("[ModelHub]. Training on IP {}", ip_address);
+
     let _ = update_cache("machine", &format!("{}", ip_address))
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
     

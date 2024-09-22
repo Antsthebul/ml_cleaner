@@ -47,10 +47,11 @@ pub async fn start_machine(machine_id:&str) -> Result<String, String>{
 
 
 #[tauri::command]
-pub async fn stop_machine(machine_id:&str) -> Result<String, String>{
-    // let pc = PaperSpaceClient::new();
-    // pc.handle_machine_run_state(machine_id, "stop").await
-    //     .map_err(|err|serialize_error(err))?;
+pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<String, String>{
+    println!("[ModelHubCommand] - STOP model request recieved for machine_id '{}'", machine_id);
+
+    let _ = model_hub_service::stop_machine(deployment_name, project_name, machine_id).await
+        .map_err(|err| serialize_error(err.to_string()))?;
 
     Ok(serialize_success("success"))
 }
@@ -59,7 +60,7 @@ pub async fn stop_machine(machine_id:&str) -> Result<String, String>{
 pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&str)-> Result<String, String>{
     println!("[ModelHubCommand] - Training model request recieved for deyploment '{}'", deployment_name);
     let _ = model_hub_service::train_model(deployment_name, project_name, machine_id).await
-        .map_err(|err| serialize_error(err.to_string()));
+        .map_err(|err| serialize_error(err.to_string()))?;
     
     Ok(serialize_success("success"))
 }

@@ -24,6 +24,7 @@ pub trait Client {
     fn train_model(self, ip_address:Ipv4Addr) -> impl std::future::Future <Output = Result<(), ModelHubError>> + Send;
     fn handle_machine_run_state(&self, machine_id:&str, action:&str) -> impl std::future::Future <Output = Result<ClientMachineResponse, ModelHubError>> + Send;
     fn get_machine_status(self, machine_id:&str)  -> impl std::future::Future <Output = Result<ClientMachineResponse, ModelHubError>> + Send;
+    fn get_base_url() -> String;
 }
 
 
@@ -59,7 +60,7 @@ fn is_machine_off(machine:ClientMachineResponse) -> bool{
 }
 
 pub async fn state_check_daemon(provider:String, machine_id:String){
-    println!("daemon run");
+    println!("[Daemon-{}]. Started", machine_id);
     let client = create_client(provider.parse().unwrap()).unwrap();
 
     loop{
@@ -67,13 +68,16 @@ pub async fn state_check_daemon(provider:String, machine_id:String){
         let res = c.get_machine_status(&machine_id).await;
 
         match res{
-            Err(err) =>{println!("[Daemon-{}]. Unable to determine state {}", machine_id, err)},
+            Err(err) =>{println!("[Daemon-{}]. Unable to determine state due to {}", machine_id, err)},
             Ok(val)=>{
                 let conn = DbClient::new().await;
                 if let Ok(db_client) = conn{
                     let _ = db_client.execute("UPDATE machines set state=$1 where machine_id=$2", &[&val.state.to_string(), &machine_id]);
+                }else{
+                    println!("Failed to connect to db")
                 }
-                if is_machine_off(val){ return}}
+
+                if is_machine_off(val){ println!("[Daemon-{}]. Machine is off. Exiting", machine_id);return}}
         }
         tokio::time::sleep(time::Duration::from_millis(5000)).await;
     }
