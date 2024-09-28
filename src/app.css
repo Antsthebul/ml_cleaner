@@ -68,6 +68,7 @@
     color:white;
     pointer-events: none !important;
     cursor:default !important;
+    opacity: .3;
 
 }
 .button-danger-disabled{

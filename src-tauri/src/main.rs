@@ -22,7 +22,7 @@ use crate::comms_endpoint::{
   config_commands::get_config,
   data_lake_commands::get_data_for_class,
   image_verifier_commands::{sync_data, get_class_names, get_unverified_images_for_class, keep_data_for_class, remove_image},
-  model_hub_commands::{generate_test_train_data, train_model, stop_machine}
+  model_hub_commands::{generate_test_train_data, train_model, stop_machine, start_machine, get_machine_status}
 };
 
 
@@ -39,7 +39,7 @@ fn main() {
     // Image verifier commands
     get_class_names,get_unverified_images_for_class, keep_data_for_class,
     // Model Hub commands
-    generate_test_train_data, train_model, stop_machine
+    generate_test_train_data, train_model, stop_machine, start_machine, get_machine_status
     // list_machines, get_machine_by_machine_id, get_machine_status, 
     // update_configuration_file_command, start_machine, stop_machine, create_new_project,
     // get_all_projects, delete_project_by_name, train_model

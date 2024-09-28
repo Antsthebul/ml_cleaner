@@ -7,6 +7,7 @@ use crate::database::DbClient;
 
 mod paperspace;
 pub struct ClientMachineResponse{
+    pub id: String,
     pub ip_address: Option<Ipv4Addr>,
     pub state: paperspace::MachineState
 }

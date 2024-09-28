@@ -141,9 +141,10 @@ impl Client for PaperSpaceClient{
     /// Connects via SSH to invoke 'train' command
     async fn train_model(self, ip_address:Ipv4Addr) ->  Result<(), ModelHubError>{
         let mut  session = Session::new()
-            .map_err(|err|ModelHubError(err.to_string()))?;
-
-        let tcp = TcpStream::connect(ip_address.to_string()).map_err(|err|ModelHubError(err.to_string()))?;
+            .map_err(|err|ModelHubError(format!("unable to start a new session {}",err)))?;
+        let addr = format!("{}:22", ip_address);
+        let tcp = TcpStream::connect(addr.as_str())
+            .map_err(|err|ModelHubError(format!("tcp conection failed. {}",err)))?;
         
         session.set_tcp_stream(tcp);
         session.userauth_agent("bulofants").map_err(|err|ModelHubError(err.to_string()))?;
@@ -202,7 +203,7 @@ impl Client for PaperSpaceClient{
             });
         }
       
-        Ok(ClientMachineResponse{ip_address:ip_address, state:state.as_str().unwrap().parse().unwrap()})
+        Ok(ClientMachineResponse{id:machine_id.to_string(),ip_address:ip_address, state:state.as_str().unwrap().parse().unwrap()})
     }    
 
     /// A thin wrapper around get machine by machine_id
@@ -211,7 +212,7 @@ impl Client for PaperSpaceClient{
         let response = self.get_machine_by_machine_id(machine_id).await
             .map_err(|err|ModelHubError(err.to_string()))?;
 
-        Ok(ClientMachineResponse { ip_address: response.public_ip_address, state: response.state })
+        Ok(ClientMachineResponse { id:machine_id.to_string(), ip_address: response.public_ip_address, state: response.state })
     }
     
 }

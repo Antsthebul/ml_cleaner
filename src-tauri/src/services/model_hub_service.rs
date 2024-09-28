@@ -1,5 +1,5 @@
 use std::{fmt, collections::HashMap};
-use app::{create_client, database::DbClient, state_check_daemon};
+use app::{create_client, database::DbClient, state_check_daemon, ClientMachineResponse};
 use serde_json::json;
 use crate::{cache_reg::update_cache};
 
@@ -92,17 +92,27 @@ async fn write_dataset_to_repo(project_name:&str, data: HashMap<String, &[(Strin
 
     Ok(())
 }
-/// Retreives status of a machine by looking up the related model hub
+/// Retreives a list of status's of all machines by looking up the related model hub
 /// vendor, and accessing their API.
-pub async fn get_machine_status(project_name:&str,machine_id:&str)-> (){
-    // let pc = PaperSpaceClient::new();
+pub async fn get_machine_status(deployment_name:&str, project_name:&str)->  Result<Vec<ClientMachineResponse>,ModelHubServiceError>{
+    let proj = config_service::get_project_by_project_name(project_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-    // let machine = pc.get_machine_status(project_name, machine_id).await
-    //     .map_err(|err|serialize_error(err.to_string()))?;
+    let dep = proj.get_project_deployment(deployment_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let tmp = dep.machines.first().unwrap();
+    let client = create_client(tmp.provider.parse().unwrap()).unwrap();
+    
+    let mut results = Vec::new();
+    for m in &dep.machines{   
+        let status = client.clone().get_machine_status(&m.id).await
+            .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-    // let response = serde_json::json!({"data":machine});
-    // Ok(serde_json::to_string(&response).unwrap())
-    ()
+        results.push(status)
+}
+        Ok(results)
+    
 }
 
 // TODO: We might not want 'list' machines, in the way that the UI
@@ -128,9 +138,7 @@ pub async fn start_machine(machine_id:&str){
     // Ok(serde_json::to_string(&response).unwrap())
 }
 
-
-
-pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&str)-> Result<(), ModelHubServiceError>{
+pub async fn start_or_stop_machine(deployment_name:&str, project_name:&str, machine_id:&str, machine_action:&str) -> Result<(),ModelHubServiceError>{
     let proj = config_service::get_project_by_project_name(project_name)
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
@@ -142,11 +150,16 @@ pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&s
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
-    mdl_hub_client.handle_machine_run_state(machine_id, "stop").await
-    .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
+    if machine_action == "start"{
+        let _= mdl_hub_client.handle_machine_run_state(machine_id, "start").await
+            .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    }else if machine_action == "stop" {
+        let _ = mdl_hub_client.handle_machine_run_state(machine_id, "stop").await
+            .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    }
     Ok(())
 }
+
 
 
 pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<(), ModelHubServiceError>{

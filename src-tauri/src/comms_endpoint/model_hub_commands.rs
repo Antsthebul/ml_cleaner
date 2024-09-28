@@ -11,13 +11,26 @@ pub async fn generate_test_train_data(project_name:&str) -> Result<String, Strin
 }
 
 #[tauri::command]
-pub async fn get_machine_status(project_name:&str,machine_id:&str)-> Result<String, String>{
-    // let pc = PaperSpaceClient::new();
+pub async fn get_machine_status(deployment_name:&str, project_name:&str)-> Result<String, String>{
+    // A rather noisy log
+    // println!("[ModelHubCommand] - GET Machine Status request recieved for deployment '{}' in project '{}'", deployment_name, project_name);
 
-    // let machine = pc.get_machine_status(project_name, machine_id).await
-    //     .map_err(|err|serialize_error(err.to_string()))?;
-
-    Ok(serialize_success("success"))
+    let machines = model_hub_service::get_machine_status(deployment_name, project_name).await
+        .map_err(|err| serialize_error(err.to_string()))?;
+    
+    let mut values = Vec::new();
+    
+    for m in &machines{
+        let tmp = serde_json::json!(
+            {
+                "id":m.id,
+                "ip_address":m.ip_address,
+                "state":m.state.to_string()}
+            );
+            
+            values.push(tmp);
+        } 
+    Ok(serialize_response("data".parse().unwrap(), values))
 }
 
 #[tauri::command]
@@ -33,24 +46,20 @@ pub async fn list_machines()-> Result<String, String>{
 }
 
 #[tauri::command]
-pub async fn start_machine(machine_id:&str) -> Result<String, String>{
-    // let pc = PaperSpaceClient::new();
-    // let  _ = pc.handle_machine_run_state(machine_id, "start").await
-    //     .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
+pub async fn start_machine(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<String, String>{
+    println!("[ModelHubCommand] - START model request recieved for machine_id '{}'", machine_id);
 
-    // let response = serde_json::json!({"data":"success"});
+    let _ = model_hub_service::start_or_stop_machine(deployment_name, project_name, machine_id, "start").await
+        .map_err(|err| serialize_error(err.to_string()))?;
 
-    // Ok(serde_json::to_string(&response).unwrap())
     Ok(serialize_success("success"))
-
 }
-
 
 #[tauri::command]
 pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<String, String>{
     println!("[ModelHubCommand] - STOP model request recieved for machine_id '{}'", machine_id);
 
-    let _ = model_hub_service::stop_machine(deployment_name, project_name, machine_id).await
+    let _ = model_hub_service::start_or_stop_machine(deployment_name, project_name, machine_id, "stop").await
         .map_err(|err| serialize_error(err.to_string()))?;
 
     Ok(serialize_success("success"))
