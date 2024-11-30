@@ -1,8 +1,9 @@
 :root{
     --red:red;
-    --info-blue: rgb(34, 69, 245);
+    --info-blue: rgb(68, 99, 252);
     --success-green:#06dd06;
     --option-orange:rgb(244, 156, 22);
+    --warning:yellow;
 }
 
 .noLink{
@@ -109,8 +110,17 @@
 .mb-10{
     margin-bottom: 10px;
 }
+.w-10{
+    width:10%;
+}
 .w-50{
     width: 50%;
+}
+.text-red{
+    color: var(--red);
+}
+.text-warning{
+    color:var(--warning);
 }
 .text-center{
     text-align: center;
@@ -162,7 +172,4 @@
     background-color: lightgrey;    
     opacity: .2;
     border: 1px solid grey
-}
-.w-10{
-    width:10%;
 }

@@ -1,4 +1,6 @@
 <style>
+    @import '../../../app.css';
+
     #inner-content{
         text-align: center;
     }
@@ -11,11 +13,26 @@
         text-align: left;
     }
     .alert{
-        position: absolute;
-        color:red;
         top:0;
         z-index: 99999;
+
     }
+    .indicatorLight{
+        border-radius: 50%;
+        height:10px;
+        width:10px;
+        display: inline-block;
+    }
+    .green{
+        background-color: var(--success-green);
+    }
+    .red{
+        background-color: var(--red);
+    }
+    .warning{
+        background-color: var(--warning);
+    }
+
 </style>
 <script lang="ts">
 	import { SideDrawer } from "$lib";
@@ -25,8 +42,10 @@
 	import { onMount } from "svelte";
 
     interface ProjectMachineWithState extends ProjectMachine{
-        state:string
+        state:MachineState
     }
+    type MachineState = "ready"|"provisioning"|"stopping"|"off"|"training"
+    type RequestedMachineState = "START"|"TRAIN"|"STOP_TRAIN"|"OFF"
 
     export let machines: ProjectMachine[] = []
     export let showSideDrawer = false
@@ -34,33 +53,86 @@
     let slug = $page.params.slug
     let deployment = $page.params.deployment
     let error: string | null = null
-    let isProvisioning = false
-    let isStarted=false
     let statusMachines:ProjectMachineWithState[] = []
+    let machineState:MachineState = "off"
+    let requestedMachineState:{[machineId: string]:RequestedMachineState} = {}
+
+    
+    $: handleMachineIndicator = (machineId:string):string=>{
+        let reqMachAction = requestedMachineState[machineId]
+        let m = statusMachines.find(m=>m.id === machineId)
+        if (!m){
+            return "red"
+        }
+        if(["off", "starting"].includes(m.state) && reqMachAction === "START"){
+            return "warning"
+        }
+        if (isMachineReady(machineId) || m.state === "training"){
+            return "green"
+        }
+       return "red"
+    }
+    $: updateRequestedMachineState = (machineId:string, action:RequestedMachineState) =>{
+        requestedMachineState = {...requestedMachineState, [machineId]:action}
+    }
     
     $:isMachineReady = (machineId:string):boolean=>{
         let m = statusMachines.find(mach=>mach.id === machineId)
         if (!m){
             return false
         }
-        if (m.state !== "off" && !"stopping"){
-            isStarted = true
-        }
         return  m.state === "ready"
     }
+    $:showMachineOnButton = (machineId:string):boolean=>{
+        // We dont want to be able to 'immediately' turn 
+        // a machine on, if we just requested it off, so we
+        // check the requested state 
+        let m = statusMachines.find(mach=>mach.id === machineId)
+        let reqMachAction = requestedMachineState[machineId]
 
+
+        if (!m){ // Initial page load
+            return true
+        }else{
+            if (m.state === "off" && (!reqMachAction|| reqMachAction === "OFF")){
+                return true
+            }
+        }
+        return false
+    }
+
+    $:showTrainingButton = (machineId:string):boolean => {
+        // Button may be disabled but we still want to
+        // show it as a 'default' option
+        let m = statusMachines.find(m=>m.id === machineId)
+        let reqMachineAction = requestedMachineState[machineId]
+        if (!m){ // Initial page load (Button visible but disabled)
+            return true
+        }
+        if (m.state === "training" && reqMachineAction === "STOP_TRAIN"){
+            return true
+        }
+        if (m.state !== "training" && reqMachineAction !== "TRAIN" ){
+            return true
+        }
+        return false
+    }
+    /**Set the requestedMachineState */
     async function handleMachineAction(machineId:string, action:"START"|"STOP"){
         console.log(`Sending '${action}' request for machine `, machineId)
-        let funcToCall = ""
+        let funcToCall;
         switch (action){
 
             case "START":
                 funcToCall = "start_machine"
-                isStarted = true
+                updateRequestedMachineState(machineId, "START")
+                setTimeout(()=>{
+                    alert("did that machine start?")
+                }, 1200000)
                 break
             case "STOP":
                 funcToCall = "stop_machine"
-                isStarted = false
+                updateRequestedMachineState(machineId,"OFF")
                 break
             default:
                 console.error(`handleMachineAction received invalid action. ${action}`)
@@ -70,23 +142,29 @@
             try{
                 await invoke(funcToCall, {deploymentName:deployment, projectName:slug, machineId})
             }catch(err){
-                console.error(`Failed to STOP machine '${machineId}'' due to `,err )
+                console.error(`Failed to ${action} machine '${machineId}'' due to `,err )
                 error = JSON.stringify(err)
-                isStarted = !isStarted
-
             }
     }
 
-
-    async function handleTrain(machineId:string){
-        console.log("Sending 'train' request for model ",machineId)
-        isProvisioning = true
-        isStarted = true
+    async function handleTrainAction(machineId:string, action:"START"|"STOP"){
+        console.log(`Sending 'train' request to '${action}' model `,machineId)
+        let command;
+        let prevTrainState = machineState
+        switch (action){
+            case "START":
+                command = "train_model"
+                updateRequestedMachineState(machineId, "TRAIN")
+                break
+            case "STOP":
+                command = "stop_train_model"
+                updateRequestedMachineState(machineId, "STOP_TRAIN")
+                break
+        }
         try{
-
-            let val:string = await invoke("train_model", {deploymentName:deployment, projectName:slug, machineId})
-            
+            await invoke(command, {deploymentName:deployment, projectName:slug, machineId})
         }catch(err){
+            machineState = prevTrainState
             try{
                 let data = JSON.parse(err as string)
                 if (data.error){
@@ -97,31 +175,42 @@
                 console.log("Failed to parse JSON, ",err)
             }            
             console.log("Train request failed. ", err)
+
         }
     }
-    
     onMount( ()=>{
-            let unsub = setInterval(async ()=>{
-                try{
+        let unsub = setInterval(async ()=>{
+            try{
 
-                    let res:string = await invoke("get_machine_status",{deploymentName:deployment, projectName:slug} )
-                    let response  = JSON.parse(res)
-                    statusMachines = [...response.data]
-
-
-                    console.log("Success POLL!", res)
-                }catch(err){
-                    console.error("Error When Polling for Machine state")
-                }
+                let res:string = await invoke("get_machine_status",{deploymentName:deployment, projectName:slug} )
+                let response:{data:ProjectMachineWithState[]}  = JSON.parse(res)
                 
-            },  1000)
-            return ()=>{clearInterval(unsub)}
-        })
-    console.log("side drawer mounted")
+                statusMachines = [...response.data]
+
+                let updateMachines = []
+                for (let m of machines){
+                    let s = statusMachines.find(prevMach => prevMach.id === m.id)
+                    if (s){
+                        m.ip_address = s.ip_address
+                    }
+                    updateMachines.push(m)
+                }
+                machines = [...updateMachines]
+
+                console.log("Success POLL!", res)
+            }catch(err){
+                console.error("Error When Polling for Machine state")
+            }
+            
+        },  1000)
+        return ()=>{clearInterval(unsub)}
+    })
+
 </script>
 {#if error}
 <div class="alert">{error}</div>
 {/if}
+
 
 <SideDrawer bind:showSideDrawer={showSideDrawer}>
     <div id="inner-content">
@@ -133,21 +222,36 @@
                 <a href={`/machines/${machine.name}`}>
                     {machine.name}
                 </a>
-                {#if isStarted || isProvisioning}  
-                <button class="button" on:click={()=>handleMachineAction(machine.id, "STOP")}>Off</button>
-                {:else}
+                {#if showMachineOnButton(machine.id)}  
                 <button class="button"  on:click={()=>handleMachineAction(machine.id, "START")}>On</button> 
+                {:else}
+                <button class="button" on:click={()=>handleMachineAction(machine.id, "STOP")}
+                    disabled={requestedMachineState[machine.id] === "OFF"}>Off</button>
                 {/if}
+                <span class={`indicatorLight ${handleMachineIndicator(machine.id)}`}></span>
             </span>
             <span class="display-block"><b>MachineID:</b> {machine.id}</span>
-            <span class="display-block"><b>IP:</b> {machine.ip_addr ?? "-"}</span>
+            <span class="display-block"><b>IP:</b> {machine.ip_address ?? "-"}</span>
             <span class="display-block"><b>Type:</b> {machine.machine_type}</span>
             <div class="display-flex gap-10 justify-content-center mt-5">
-                    <button class="button button-option">Show Runs</button>
-                    <button class={`button button-success ${!isMachineReady(machine.id) && "button-success-disabled"}`} 
-                        on:click={()=>handleTrain(machine.id)}
-                        disabled={!isMachineReady(machine.id)}
-                        >Train</button>
+                <button class="button button-option">Show Runs</button>
+                {#if showTrainingButton(machine.id)}
+                <button class={`button button-success ${!isMachineReady(machine.id) && "button-success-disabled"}`} 
+                    on:click={()=>handleTrainAction(machine.id, 'START')}
+                    disabled={!isMachineReady(machine.id)}
+                    >Train</button>
+                {:else}
+                <button class={`button button-danger ${requestedMachineState[machine.id] === "STOP_TRAIN" && "button-danger-disabled"}`}
+                    on:click={()=>handleTrainAction(machine.id, 'STOP')}
+                    disabled={requestedMachineState[machine.id] === "STOP_TRAIN"}
+                    >Stop Train</button>
+                {/if}
+            </div>
+            <div class="justify-content-center">
+
+                <button class="button button-info mx-auto mt-5">
+                    Download Model
+                </button>
             </div>
 
         </div>

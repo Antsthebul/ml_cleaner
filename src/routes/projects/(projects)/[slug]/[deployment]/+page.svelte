@@ -69,7 +69,7 @@
                 id:server_machine.id,
                 name:server_machine.name,
                 machine_type:server_machine.machineType,
-                ip_addr:server_machine.ip_addr
+                ip_address:server_machine.ip_address
             }
             
             // TODO: 'actual' machine

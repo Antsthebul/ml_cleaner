@@ -1,7 +1,7 @@
-use std::{fmt, collections::HashMap};
-use app::{create_client, database::DbClient, state_check_daemon, ClientMachineResponse};
+use std::{collections::HashMap, fmt, net::Ipv4Addr};
+use app::{components::adapters::model_hub::MachineState, create_client, database::DbClient, state_check_daemon, ClientMachineResponse};
 use serde_json::json;
-use crate::{cache_reg::update_cache};
+use crate::cache_reg::update_cache;
 
 use super::{ 
     config_service, 
@@ -20,7 +20,7 @@ impl fmt::Display for ModelHubServiceError{
 /// Generates test/train data for related project.
 /// For now we generate from scratch
 pub async fn generate_test_train_data(project_name:&str, train_pct:Option<f64>) -> Result <(), ModelHubServiceError>{
-    let pr = get_project_by_project_name(project_name).await
+    let _ = get_project_by_project_name(project_name).await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
     let image_map = image_verifier_service::list_all_images_by_class().await
@@ -95,6 +95,9 @@ async fn write_dataset_to_repo(project_name:&str, data: HashMap<String, &[(Strin
 /// Retreives a list of status's of all machines by looking up the related model hub
 /// vendor, and accessing their API.
 pub async fn get_machine_status(deployment_name:&str, project_name:&str)->  Result<Vec<ClientMachineResponse>,ModelHubServiceError>{
+    
+    let via_api = false;
+    
     let proj = config_service::get_project_by_project_name(project_name)
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
@@ -102,14 +105,36 @@ pub async fn get_machine_status(deployment_name:&str, project_name:&str)->  Resu
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
     let tmp = dep.machines.first().unwrap();
-    let client = create_client(tmp.provider.parse().unwrap()).unwrap();
     
+    let client = create_client(tmp.provider.parse().unwrap()).unwrap();
+    let db_client = DbClient::new().await.unwrap();
     let mut results = Vec::new();
-    for m in &dep.machines{   
-        let status = client.clone().get_machine_status(&m.id).await
-            .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-        results.push(status)
+    for m in &dep.machines{
+        let mut status:Option<_> = None;
+
+        if via_api{
+            status = Some(client.clone().get_machine_status(&m.id).await
+                .map_err(|err| ModelHubServiceError(err.to_string()))?);
+        }else{
+            let rows = db_client.query("SELECT ip_address, state FROM machines where machine_id=$1 ",&[&m.id]).await
+                .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
+            let row = rows.first().unwrap();
+            let ip_addr_str:String = row.get(0); 
+            let mut ip_address = None;
+            if let Ok(ip) = ip_addr_str.parse::<Ipv4Addr>(){
+                ip_address = Some(ip)
+            };
+            status = Some(ClientMachineResponse{id:m.id.to_owned(), ip_address:ip_address, state:row.get(1)});
+
+        }   
+        if let Some(s) = status{
+
+            results.push(s)
+        }else{
+            println!("No satus found!")
+        }
 }
         Ok(results)
     
@@ -124,17 +149,6 @@ pub async fn list_machines(){
     // .map_err(|err|serialize_error(err.to_string()))?;
 
     // let response = serde_json::json!({"data":machines});
-    // Ok(serde_json::to_string(&response).unwrap())
-}
-
-/// Spins up a machine in the related provider environment.
-pub async fn start_machine(machine_id:&str){
-    // let pc = PaperSpaceClient::new();
-    // let  _ = pc.handle_machine_run_state(machine_id, "start").await
-    //     .map_err(|err|serde_json::to_string(&serde_json::json!({"error":err.to_string()})).unwrap())?;
-
-    // let response = serde_json::json!({"data":"success"});
-
     // Ok(serde_json::to_string(&response).unwrap())
 }
 
@@ -153,6 +167,14 @@ pub async fn start_or_stop_machine(deployment_name:&str, project_name:&str, mach
     if machine_action == "start"{
         let _= mdl_hub_client.handle_machine_run_state(machine_id, "start").await
             .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
+        let db_client = DbClient::new().await
+            .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
+        // Should use correct MachineState ENUM here
+        let _ = db_client.execute("INSERT into machines (machine_id, state) VALUES ($1, $2) ON CONFLICT(machine_id) DO UPDATE set state=$2", &[&machine_id, &MachineState::Off]).await
+            .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
     }else if machine_action == "stop" {
         let _ = mdl_hub_client.handle_machine_run_state(machine_id, "stop").await
             .map_err(|err| ModelHubServiceError(err.to_string()))?;
@@ -162,6 +184,39 @@ pub async fn start_or_stop_machine(deployment_name:&str, project_name:&str, mach
 
 
 
+/// This WILL NOT shutdown the machine. Simply invokes a 'shutdown' command to
+/// training process
+pub async fn stop_train_model(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<(), ModelHubServiceError>{
+    // We use the 'minimal' retreival method, since we only need provider
+    let proj = config_service::get_project_by_project_name(project_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let dep = proj.get_project_deployment(deployment_name)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let mach = dep.get_machine_by_machine_id(machine_id)
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+
+    let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
+    
+    let db_client = DbClient::new().await
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let rows = db_client.query("SELECT ip_address FROM machines where machine_id=$1", &[&machine_id]).await.unwrap();
+    let ip_address = rows[0].get::<usize, String>(0);
+    println!("[ModelHub]. Invoked Stopped Training on IP {}", ip_address);
+
+    let _ = update_cache("machine", &format!("{}", ip_address))
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+        
+    let _ = mdl_hub_client.stop_train_model(ip_address.parse().unwrap()).await
+    .map_err(|err|ModelHubServiceError(err.to_string()))?;
+
+    let _ = db_client.execute("UPDATE machines set state=$1 where machine_id=$2", &[&MachineState::Ready, &machine_id])
+        .await.unwrap();
+    Ok(())
+
+}
 pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&str) -> Result<(), ModelHubServiceError>{
     // We use the 'minimal' retreival method, since we only need provider
     let proj = config_service::get_project_by_project_name(project_name)
@@ -176,41 +231,21 @@ pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&st
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
     
     let db_client = DbClient::new().await
-    .map_err(|err| ModelHubServiceError(err.to_string()))?;
+        .map_err(|err| ModelHubServiceError(err.to_string()))?;
     
-    let ip_address = match mach.ip_addr{
-        None=>{
-            let res = mdl_hub_client.handle_machine_run_state(machine_id, "start").await
-                .map_err(|err| ModelHubServiceError(err.to_string()))?;
-            
-                if let Some(v) = res.ip_address{
-                    println!("found IP inserting to db");
-                    // TODO: Use k/v store as cache instead of DB
-                    let _ = db_client.execute("INSERT machine_state (machine_id, state, ip_address) VALUES ($1,$2,$3)",
-                    &[&machine_id,&res.state.to_string(),&format!("{:?}",res.ip_address) ] );
-                   v
-                }else{
-                    return Err(ModelHubServiceError(String::from("No IP retrurns when attempt to train model")))
-                }
-            },
-        Some(ip)=>ip
-    };
+    let rows = db_client.query("SELECT ip_address FROM machines where machine_id=$1", &[&machine_id]).await.unwrap();
+    let ip_address = rows[0].get::<usize, String>(0);
     println!("[ModelHub]. Training on IP {}", ip_address);
 
     let _ = update_cache("machine", &format!("{}", ip_address))
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
-    
-    let m_id = machine_id.to_owned();
-        
-
-    tauri::async_runtime::spawn(async move{
-        state_check_daemon(mach.provider ,m_id).await
-    });
-
+            
     // SSH into server, and run train command
-    let _ = mdl_hub_client.train_model(ip_address).await
+    let _ = mdl_hub_client.train_model(ip_address.parse().unwrap()).await
         .map_err(|err|ModelHubServiceError(err.to_string()))?;
 
+    let _ = db_client.execute("UPDATE machines set state=$1 where machine_id=$2", &[&MachineState::Training, &machine_id])
+        .await.unwrap();
     Ok(())
 }
 

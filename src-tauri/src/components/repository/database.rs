@@ -1,8 +1,9 @@
 use core::fmt;
 
 use tokio_postgres::{NoTls, Error, Client};
-
+#[derive(Debug)]
 pub struct DbClientError(String);
+#[derive(Debug)]
 pub struct DbClient{}
 
 impl DbClient{

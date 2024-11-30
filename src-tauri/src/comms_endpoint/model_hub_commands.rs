@@ -4,7 +4,7 @@ use crate::{common::response_types::{serialize_response, serialize_success, seri
 pub async fn generate_test_train_data(project_name:&str) -> Result<String, String>{
     let train_pct = Some(0.8);
 
-    model_hub_service::generate_test_train_data(project_name, train_pct).await
+    let _ = model_hub_service::generate_test_train_data(project_name, train_pct).await
         .map_err(|err| serialize_error(err.to_string()));
 
     Ok(serialize_success("success"))
@@ -69,6 +69,15 @@ pub async fn stop_machine(deployment_name:&str, project_name:&str, machine_id:&s
 pub async fn train_model(deployment_name:&str, project_name:&str, machine_id:&str)-> Result<String, String>{
     println!("[ModelHubCommand] - Training model request recieved for deyploment '{}'", deployment_name);
     let _ = model_hub_service::train_model(deployment_name, project_name, machine_id).await
+        .map_err(|err| serialize_error(err.to_string()))?;
+    
+    Ok(serialize_success("success"))
+}
+
+#[tauri::command]
+pub async fn stop_train_model(deployment_name:&str, project_name:&str, machine_id:&str)-> Result<String, String>{
+    println!("[ModelHubCommand] - Stop Training model request recieved for deyploment '{}'", deployment_name);
+    let _ = model_hub_service::stop_train_model(deployment_name, project_name, machine_id).await
         .map_err(|err| serialize_error(err.to_string()))?;
     
     Ok(serialize_success("success"))

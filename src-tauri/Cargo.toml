@@ -24,7 +24,6 @@ reqwest= { version = "0.12.2", features= ["json"] }
 dotenvy = "0.15.7"
 rust-s3 = "0.35.1"
 toml = "0.8.12"
-ssh2 = "0.9.4"
 bytes = "1.7.1"
 base64 = "0.22.1"
 futures-executor = "0.3"
@@ -33,6 +32,8 @@ postgres = "0.19.8"
 tokio-postgres = "0.7.11"
 rand = "0.8.5"
 chrono = "0.4.38"
+postgres-types = { version = "0.2.8", features= ["derive"] }
+ssh-rs = "0.5.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

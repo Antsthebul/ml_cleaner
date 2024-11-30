@@ -1,15 +1,16 @@
 use core::fmt;
 use std::{time, net::Ipv4Addr, str::FromStr};
 
-use paperspace::MachineState;
+pub use paperspace::MachineState;
 
 use crate::database::DbClient;
 
-mod paperspace;
+pub mod paperspace;
+
 pub struct ClientMachineResponse{
     pub id: String,
     pub ip_address: Option<Ipv4Addr>,
-    pub state: paperspace::MachineState
+    pub state: MachineState
 }
 
 #[derive(Debug)]
@@ -23,6 +24,9 @@ pub enum ClientType{
 pub trait Client {
     fn new() -> Self;
     fn train_model(self, ip_address:Ipv4Addr) -> impl std::future::Future <Output = Result<(), ModelHubError>> + Send;
+    fn stop_train_model(&self, ip_address:Ipv4Addr) -> impl std::future::Future <Output = Result<(), ModelHubError>> + Send;
+    fn check_training_status(self, ip_address:Ipv4Addr) -> impl std::future::Future <Output = Result<(), ModelHubError>> + Send;
+    fn download_model(self, ip_address:Ipv4Addr) -> impl std::future::Future <Output = Result<(), ModelHubError>> + Send;
     fn handle_machine_run_state(&self, machine_id:&str, action:&str) -> impl std::future::Future <Output = Result<ClientMachineResponse, ModelHubError>> + Send;
     fn get_machine_status(self, machine_id:&str)  -> impl std::future::Future <Output = Result<ClientMachineResponse, ModelHubError>> + Send;
     fn get_base_url() -> String;
@@ -52,7 +56,7 @@ pub fn create_client(client_type:ClientType)-> Result<impl Client+Clone, ModelHu
 }
 
 fn is_machine_off(machine:ClientMachineResponse) -> bool{
-    let off_states = vec![MachineState::Off, MachineState::Stopping];
+    let off_states = vec![MachineState::Off];
 
     if off_states.contains(&machine.state){
         return true
@@ -73,7 +77,11 @@ pub async fn state_check_daemon(provider:String, machine_id:String){
             Ok(val)=>{
                 let conn = DbClient::new().await;
                 if let Ok(db_client) = conn{
-                    let _ = db_client.execute("UPDATE machines set state=$1 where machine_id=$2", &[&val.state.to_string(), &machine_id]);
+                    let ip_address = match &val.ip_address{
+                        Some(ip)=>ip.to_string(),
+                        None=>"".to_string()
+                    };
+                    let _ = db_client.execute("UPDATE machines set state=$1, ip_address=$2 where machine_id=$3", &[&val.state, &ip_address, &machine_id]).await.unwrap();
                 }else{
                     println!("Failed to connect to db")
                 }

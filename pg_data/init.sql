@@ -14,11 +14,11 @@ CREATE TABLE verified_images (
 );
 
 CREATE TYPE machine_state AS ENUM(
-    'off','starting','stopping','restarting','serviceready','ready','upgrading','provisioning'
+    'off','starting','stopping','restarting','serviceready','ready','upgrading','provisioning', 'training'
 );
 
 CREATE TABLE machines (
     machine_id VARCHAR UNIQUE ,
     state machine_state NOT NULL,
-    ip_address VARCHAR NOT NULL
+    ip_address VARCHAR NULL
 );

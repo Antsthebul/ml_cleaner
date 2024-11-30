@@ -34,7 +34,7 @@ type ModifiedMachine = Omit<Machine, 'machineType'|'state'>;
 
 export interface ProjectMachine extends ModifiedMachine{
     machine_type: string,
-    ip_addr:string|null
+    ip_address:string|null
 }
 /** Machine returned by server*/  
 export interface Machine{
@@ -42,7 +42,7 @@ export interface Machine{
     name:string,
     machineType:string,
     state:string,
-    ip_addr:string|null
+    ip_address:string|null
 }
 
 export interface ConfigurationResponse{

@@ -28,21 +28,21 @@ pub fn create_cache() -> io::Result<()>{
 /// Where each aside from app name, each key is a volatile entity
 /// and the value 'schema' as a string is <value>;<lastUpdateUTC>;
 pub fn update_cache(key:&str, value: &str) -> io::Result<()>{
-    let file = fs::File::open(".cache/state.json")?;
-    let reader = BufReader::new(file);
-    let data: HashMap<String, serde_json::Value> = serde_json::from_reader(reader).unwrap();
+    // let file = fs::File::open(".cache/state.json")?;
+    // let reader = BufReader::new(file);
+    // let data: HashMap<String, serde_json::Value> = serde_json::from_reader(reader).unwrap();
 
-    let mut state_map:HashMap<&str, String> = HashMap::new();
+    // let mut state_map:HashMap<&str, String> = HashMap::new();
     
-    for k in data.keys(){
-        let val = data.get(k).unwrap().to_string();
-        state_map.insert(k, val);
-    }
-    let date = chrono::offset::Utc::now();
-    let built_val = format!("{};{}", value, date);
-    state_map.insert(key, built_val);
+    // for k in data.keys(){
+    //     let val = data.get(k).unwrap().to_string();
+    //     state_map.insert(k, val);
+    // }
+    // let date = chrono::offset::Utc::now();
+    // let built_val = format!("{};{}", value, date);
+    // state_map.insert(key, built_val);
 
-    let contents = serde_json::to_string(&state_map).unwrap();    
-    let _ = fs::write(".cache/state.json", contents.as_bytes())?;
+    // let contents = serde_json::to_string(&state_map).unwrap();    
+    // let _ = fs::write(".cache/state.json", contents.as_bytes())?;
     Ok(())
 }

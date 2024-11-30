@@ -1,25 +1,36 @@
 use reqwest::header;
 use serde::{de::{DeserializeOwned, Error as DeError}, Deserialize,Deserializer, Serialize};
 use serde_json::Value;
-use std::{collections::HashMap, env, fmt, fs::File, io::BufReader, net::{Ipv4Addr, TcpStream}, str::FromStr, time};
-use ssh2::Session;
+use std::{collections::HashMap, env, fmt, fs::{self, File}, io::BufReader, net::{Ipv4Addr, TcpStream}, process::Command, str::FromStr, thread, time};
+use ssh::{create_session, SessionBroker, SessionConnector, LocalSession};
 
 use crate::{state_check_daemon, ClientMachineResponse};
-
+use postgres_types::{ToSql, FromSql};
 use super::{Client, ModelHubError};
 
 pub struct PaperSpaceClientError(String);
 
-#[derive(Serialize, Deserialize, Debug, Clone,PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone,PartialEq, ToSql, FromSql)]
+#[postgres(name="machine_state")]
 pub enum MachineState{
+    #[postgres(name="off")]
     Off, 
+    #[postgres(name="starting")]
     Starting,
+    #[postgres(name="stopping")]
     Stopping,
+    #[postgres(name="restarting")]
     Restarting,
+    #[postgres(name="serviceready")]
     ServiceReady,
+    #[postgres(name="ready")]
     Ready,
+    #[postgres(name="upgrading")]
     Upgrading,
-    Provisioning
+    #[postgres(name="provisioning")]
+    Provisioning,
+    #[postgres(name="training")]
+    Training
 
 }
 
@@ -69,7 +80,8 @@ impl fmt::Display for MachineState{
             Self::ServiceReady=>write!(f, "{}","ServiceReady"),
             Self::Stopping=>write!(f, "{}","stopping"),
             Self::Upgrading=>write!(f, "{}","upgrading"),
-            Self::Starting=>write!(f, "{}", "starting")
+            Self::Starting=>write!(f, "{}", "starting"),
+            Self::Training=>write!(f, "{}", "training")
         }
     }
 }
@@ -117,6 +129,20 @@ pub struct PaperSpaceClient{
     base_url:String,
     client:reqwest::Client
 }
+fn create_ssh_session_local(ip_address:Ipv4Addr) -> Result<LocalSession<TcpStream>, PaperSpaceClientError>{
+    Ok(create_ssh_session(ip_address)?.run_local())
+}
+fn create_ssh_session_backend(ip_address:Ipv4Addr) -> Result<SessionBroker, PaperSpaceClientError>{
+    Ok(create_ssh_session(ip_address)?.run_backend())
+}
+
+fn create_ssh_session(ip_address:Ipv4Addr)->Result<SessionConnector<TcpStream>, PaperSpaceClientError >{
+    create_session()
+    .username("paperspace")
+    .private_key_path("C:/Users/Antho/.ssh/id_rsa")
+    .connect(format!("{}:22", ip_address))
+    .map_err(|err|PaperSpaceClientError(err.to_string()))
+}
 
 impl Client for PaperSpaceClient{
     fn get_base_url() -> String {
@@ -137,27 +163,81 @@ impl Client for PaperSpaceClient{
    }
    
    }
+   async fn stop_train_model(&self, ip_address:Ipv4Addr) ->  Result<(), ModelHubError> {
+    let mut s = create_ssh_session_local(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
 
+        let exec = s.open_exec().unwrap();
+
+        let command = format!("orkestr8 stop");        
+        let res: Vec<u8> = exec.send_command(&command).unwrap();
+
+        println!("Result of stop: {:?}", String::from_utf8(res).unwrap());
+        // Close session.
+        s.close();
+        println!("Training stopped!");
+        Ok(())
+   }
     /// Connects via SSH to invoke 'train' command
     async fn train_model(self, ip_address:Ipv4Addr) ->  Result<(), ModelHubError>{
-        let mut  session = Session::new()
-            .map_err(|err|ModelHubError(format!("unable to start a new session {}",err)))?;
-        let addr = format!("{}:22", ip_address);
-        let tcp = TcpStream::connect(addr.as_str())
-            .map_err(|err|ModelHubError(format!("tcp conection failed. {}",err)))?;
+        let mut s = create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
+        let access = env::var("AWS_ACCESS_KEY").unwrap();
+        let secret = env::var("AWS_SECRET_KEY").unwrap();
+        let bucket = env::var("AWS_BUCKET_NAME").unwrap();
+
+        let mut exec = s.open_exec().unwrap();
+        thread::spawn(move||{
+
+            let command = format!("nohup bash -c '{{ pip install --upgrade orkestr8-sdk && pip install --force-reinstall -v \'numpy==1.25.2\' && BASE_IMAGES_DIRECTORY=~/data/images BASE_RUN_LOCATION=~/data/runs orkestr8 run --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket} --model-module=main --remote-file-path=code/foodenie_ml.tar.gz --dest-file-path=foodenie_ml -y; }}' >> log.txt 2>&1 &");        
+            let _ = exec.send_command(&command);
+        });
+
+        // Close session.
+        s.close();
+        println!("Training started!");
+        Ok(())
+
+    }
+    async fn check_training_status(self, ip_address:Ipv4Addr) ->  Result<(), ModelHubError>{
+        let mut s = create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
+
+        let mut exec = s.open_exec().unwrap();
         
-        session.set_tcp_stream(tcp);
-        session.userauth_agent("bulofants").map_err(|err|ModelHubError(err.to_string()))?;
+        let command = format!("orkestr8 check");        
+        let result = exec.send_command(&command);
+        println!("Got result {:?}", result);
 
         Ok(())
     }
 
+    async fn download_model(self, ip_address:Ipv4Addr) ->  Result<(), ModelHubError>{
+        let mut s = create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
+
+        let access = env::var("AWS_ACCESS_KEY").unwrap();
+        let secret = env::var("AWS_SECRET_KEY").unwrap();
+        let bucket = env::var("AWS_BUCKET_NAME").unwrap();
+
+        let mut exec = s.open_exec().unwrap();
+        
+        let command = format!("orkestr8 download_model S3 --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket}  --destination=data/ml_state/current");        
+        let _ = exec.send_command(&command);
+
+        Ok(())
+    }
     /// Recieves an action to be invoked for the machine. Returns
     /// Machine info on success
     async fn handle_machine_run_state(&self, machine_id:&str, action:&str)-> Result<ClientMachineResponse, ModelHubError>{
         println!("Sending request to change state for machine {} to {}", machine_id, action);
         let mut url = self.base_url.to_owned();
         url.push_str(&format!("/{}/{}", machine_id, action));
+
+        // Send a cancel request to server
+        // to kill training process
+        if action == "stop"{
+            let machine = self.get_machine_by_machine_id(machine_id)
+                .await.map_err(|err|ModelHubError(err.to_string()))?;
+
+            let _ = self.stop_train_model(machine.public_ip_address.unwrap());
+        }
 
         let response = self.make_request::<serde_json::value::Value>(url, "patch".parse().unwrap()).await
             .map_err(|err|ModelHubError(err.to_string()))?;
@@ -212,36 +292,35 @@ impl Client for PaperSpaceClient{
         let response = self.get_machine_by_machine_id(machine_id).await
             .map_err(|err|ModelHubError(err.to_string()))?;
 
-        Ok(ClientMachineResponse { id:machine_id.to_string(), ip_address: response.public_ip_address, state: response.state })
+        let mut state = response.state;
+        if state == MachineState::Ready{
+            if let Ok(mut s) = create_ssh_session_local(response.public_ip_address.unwrap()).map_err(|err| ModelHubError(err.to_string())){
+                let exec = s.open_exec().unwrap();
+                let res:Vec<u8> = exec.send_command("orkestr8 check").unwrap();
+                let output = String::from_utf8(res).unwrap();
+                
+                match output.trim(){
+                    "ACTIVE"=>{
+                        state = MachineState::Training
+                    },
+                    "INACTIVE" => {
+                        state = MachineState::Ready
+                    },
+                    x => {
+                        println!("Got unknown output {:?}. Default to READY", x);
+                        state = MachineState::Ready
+                    }
+                }
+
+            }
+        }
+
+        Ok(ClientMachineResponse { id:machine_id.to_string(), ip_address: response.public_ip_address, state: state })
     }
     
 }
 impl PaperSpaceClient{
 
-    // Read token from path, other attempts to
-    // signin
-    fn get_token() -> String{
-        let f = File::open(".cache/map.json").unwrap();
-        let rdr = BufReader::new(f);
-        let cache_data: serde_json::Value= serde_json::from_reader(rdr).unwrap();
-        let token = cache_data.get("token").unwrap();
-
-        token.to_string()
-    }
-
-    async fn sign_in(self){
-        // On app load existence is already checked
-        let api_key = env::var("PAPERSPACE_API_KEY").unwrap();
-        let url = Self::get_base_url();
-        let c = reqwest::Client::new();
-
-        let res = c.get(url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await
-        .unwrap();
-
-    }
 
     async fn make_request<T: DeserializeOwned >(&self, url:String, request_type:RequestType)
         ->Result <T, PaperSpaceClientError>{
@@ -276,7 +355,7 @@ impl PaperSpaceClient{
         Ok( serde_json::from_str(&text).map_err(|err|PaperSpaceClientError(err.to_string()))?)
 
     }
-    pub async fn get_machine_by_machine_id(self, machine_id:&str)->Result<Machine, PaperSpaceClientError>{
+    pub async fn get_machine_by_machine_id(&self, machine_id:&str)->Result<Machine, PaperSpaceClientError>{
         let url = format!("{}/{machine_id}",self.base_url);
 
         Ok(self.make_request::<Machine>(url, "get".parse().unwrap()).await?)
@@ -289,10 +368,6 @@ impl PaperSpaceClient{
         Ok(self.make_request::<Vec<Machine>>(url, "get".parse().unwrap()).await?)
     
     }
-
-
-
-
 
 }
 
