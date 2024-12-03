@@ -80,6 +80,14 @@
 
 }
 
+.button-info-disabled{
+    background-color: var(--info-blue);
+    color:white;
+    pointer-events: none !important;
+    cursor:default !important;
+    opacity: .3;
+}
+
 .f-5{
     font-size:.6em;
 }

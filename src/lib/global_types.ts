@@ -61,3 +61,9 @@ export interface ImageData{
     file_path:string,
     verified?:boolean
 }
+
+export interface TrainingData {
+    machineId: string,
+    trainData:string
+
+}

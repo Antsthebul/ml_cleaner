@@ -35,7 +35,7 @@
 
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
-    import type {Machine, ProjectMachine, Deployment} from "$lib/global_types";
+    import type {Machine, ProjectMachine, Deployment, TrainingData} from "$lib/global_types";
 	import {ProjectMachineSideDrawer} from "$lib";
 	import { page } from "$app/stores";
 
@@ -49,7 +49,7 @@
 	}
 	let slug = $page.params.slug
 	let curDeployment:Deployment|null = data.data ?? {...INIT_DEPLOYMENT}
-
+    let trainingResults: TrainingData[] = []
     $: allowEditClassesPath = false;
     let fileMap = {}
     let fileNameInput = ''
@@ -61,6 +61,8 @@
     let showMachineList = false;
     let machines = [] as Machine[]
     let selectedMachineIdx = 0;
+    
+
     
     const updateSelectedMachine = () =>{
         if (selectedMachineIdx > 0 ){
@@ -189,6 +191,24 @@
             <!-- <p>Last Modified: {localProject.class_data.lastModified ? new Date(localProject.class_data.lastModified).toLocaleString():""}</p> -->
             <p><span class="bold">Total Trained Classes: </span> {listOfClasses?.length}</p>
         </div>
+        <div>
+            <h4>Training Results</h4>
+            {#each trainingResults as result}
+            <div>
+                <span>
+                    <b>Epoch:</b> {result.trainData.epoch}
+                    <b>Train Validation: </b> {Math.round(result.trainData.train_loss, 3)}
+                    <b>Train Accuracy</b>{result.trainData.train_acc}
+                    <b>Test Loss</b> {Math.round(result.trainData.val_loss, 3)}
+                    <b>Test Accuracy: </b>{result.trainData.test_acc}
+                </span>
+            </div>
+            {/each}
+        </div>
     </div>
-    <ProjectMachineSideDrawer bind:showSideDrawer={showMachineList} machines={curDeployment.machines}/>
+    <ProjectMachineSideDrawer 
+        bind:showSideDrawer={showMachineList} 
+        bind:trainingResults={trainingResults}
+        machines={curDeployment.machines}
+        />
 </section>

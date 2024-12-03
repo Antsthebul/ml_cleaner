@@ -26,6 +26,6 @@
     <a href="/machines">Machines</a>
     <a href="/projects">Projects</a>
     {#each $projects as project}
-        <a href={`/projects/${project.name}`} class="noLink">&nbsp;{project.name}</a>
+        <a data-sveltekit-preload-data="tap" href={`/projects/${project.name}`} class="noLink">&nbsp;{project.name}</a>
     {/each}
 </div>

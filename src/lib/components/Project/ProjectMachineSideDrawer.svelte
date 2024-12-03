@@ -36,19 +36,21 @@
 </style>
 <script lang="ts">
 	import { SideDrawer } from "$lib";
-	import type { ProjectMachine } from "$lib/global_types";
+	import type { ProjectMachine, TrainingData } from "$lib/global_types";
 	import { invoke } from "@tauri-apps/api/tauri";
 	import { page } from '$app/stores';
 	import { onMount } from "svelte";
 
+
     interface ProjectMachineWithState extends ProjectMachine{
         state:MachineState
     }
-    type MachineState = "ready"|"provisioning"|"stopping"|"off"|"training"
+    type MachineState = "ready"|"starting"|"stopping"|"off"|"training"
     type RequestedMachineState = "START"|"TRAIN"|"STOP_TRAIN"|"OFF"
 
     export let machines: ProjectMachine[] = []
     export let showSideDrawer = false
+    export let trainingResults: TrainingData[]
     
     let slug = $page.params.slug
     let deployment = $page.params.deployment
@@ -56,8 +58,22 @@
     let statusMachines:ProjectMachineWithState[] = []
     let machineState:MachineState = "off"
     let requestedMachineState:{[machineId: string]:RequestedMachineState} = {}
+    let trainingResultPollerUnsub:any = null
 
-    
+    $: isDownloadModelButtonDisabled = (machineId:string):boolean=>{
+        let m = statusMachines.find(m=>m.id === machineId)
+        let reqMachAction = requestedMachineState[machineId]
+
+        if (!m || m && m.state == "off"){
+            return true
+        }
+        if ((isMachineReady(machineId) && reqMachAction === "TRAIN" )||["training", "starting"].includes(m.state)){
+            return true
+        }
+        return false
+    }
+
+
     $: handleMachineIndicator = (machineId:string):string=>{
         let reqMachAction = requestedMachineState[machineId]
         let m = statusMachines.find(m=>m.id === machineId)
@@ -117,6 +133,38 @@
         }
         return false
     }
+
+    $:pollForTrainingResults = async (machineId:string)=>{
+        let m = statusMachines.find(m=>m.id === machineId)
+
+        if (m!.state === "training"){
+
+            try{
+                let response:string = await invoke("get_training_results", {deploymentName:deployment, projectName:slug, machineId})
+                console.log("TRINGIN RESULTS POLLL", response)
+                let result = JSON.parse(response)
+                console.log("not help ", result)
+                if (result){
+
+                    trainingResults = [...trainingResults, {machineId:machineId, trainData:result.data}]
+                }
+            }catch(e){
+                try{
+
+                    let error_data = JSON.parse(e as string)
+                    if (error_data.error !== "No data"){
+    
+                        console.error("Failed to poll training results", e)
+                    }
+                    return
+                }catch(e){
+                    
+                }
+                console.error("Poll for training result failed ot unknown")
+            }
+        }
+    }
+
     /**Set the requestedMachineState */
     async function handleMachineAction(machineId:string, action:"START"|"STOP"){
         console.log(`Sending '${action}' request for machine `, machineId)
@@ -129,10 +177,13 @@
                 setTimeout(()=>{
                     alert("did that machine start?")
                 }, 1200000)
+
                 break
             case "STOP":
                 funcToCall = "stop_machine"
                 updateRequestedMachineState(machineId,"OFF")
+                clearInterval(trainingResultPollerUnsub)
+
                 break
             default:
                 console.error(`handleMachineAction received invalid action. ${action}`)
@@ -155,10 +206,14 @@
             case "START":
                 command = "train_model"
                 updateRequestedMachineState(machineId, "TRAIN")
+                trainingResultPollerUnsub = setInterval(()=>{
+                    pollForTrainingResults(machineId)
+                }, 2000)                
                 break
             case "STOP":
                 command = "stop_train_model"
                 updateRequestedMachineState(machineId, "STOP_TRAIN")
+                clearInterval(trainingResultPollerUnsub)
                 break
         }
         try{
@@ -178,6 +233,16 @@
 
         }
     }
+
+    async function downloadModel(machineId:string){
+        try{
+
+            let response:string = await invoke("download_model", {deploymentName:deployment, projectName:slug, machineId})
+        }catch(e){
+            console.error("failed to download model")
+        }
+    }
+
     onMount( ()=>{
         let unsub = setInterval(async ()=>{
             try{
@@ -249,7 +314,10 @@
             </div>
             <div class="justify-content-center">
 
-                <button class="button button-info mx-auto mt-5">
+                <button 
+                    class={`button button-info mx-auto mt-5 ${isDownloadModelButtonDisabled(machine.id) && "button-info-disabled"}`}
+                    disabled={isDownloadModelButtonDisabled(machine.id)}
+                    on:click={()=>downloadModel(machine.id)}>
                     Download Model
                 </button>
             </div>
