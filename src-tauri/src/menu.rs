@@ -1,4 +1,4 @@
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
+use tauri::{CustomMenuItem, Menu, Submenu};
 
 pub fn build_menu() -> Menu {
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");

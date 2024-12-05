@@ -11,7 +11,10 @@ mod services;
 use std::{env, net::Ipv4Addr, path};
 
 mod config;
-use app::{database::DbClient, state_check_daemon};
+use app::{
+    components::get_run_environment,
+    database::DbClient,
+    state_check_daemon};
 use daemon::ModelHubRecord;
 // mod repository;
 use crate::comms_endpoint::{
@@ -114,5 +117,6 @@ fn startup_function() {
         });
     }
 
-    println!("Startup process complete!\n")
+    println!("Startup process complete!\n");
+    println!("Running in **{}**", get_run_environment())
 }

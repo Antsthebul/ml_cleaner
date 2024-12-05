@@ -1,4 +1,3 @@
-use crate::file_config::Configuration;
 use base64::prelude::*;
 use bytes::Bytes;
 use regex::Regex;
@@ -7,8 +6,7 @@ use s3::creds::Credentials;
 /// fetching and saving objects
 use s3::{bucket::Bucket, request::ResponseData};
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, write};
-use std::fs;
+use std::fmt;
 
 #[derive(Deserialize, Serialize)]
 
@@ -281,10 +279,6 @@ async fn get_trained_model_info() {}
 
 /// Fetches files, saved on config for the data runs directory
 async fn get_data_runs() {}
-
-/// Fetches file saved on config if exists, from AWS bucket
-/// returns dependent variales that are staged to be deployed
-async fn get_stage_data() {}
 
 // PUT item in bucket
 // pub async fn update_object(file_path:&str, content:&[u8])->Result<(), LakeClientError>{

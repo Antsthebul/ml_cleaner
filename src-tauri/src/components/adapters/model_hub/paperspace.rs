@@ -8,16 +8,16 @@ use ssh::{create_session, LocalSession, SessionBroker, SessionConnector};
 use std::{
     collections::HashMap,
     env, fmt,
-    fs::{self, File},
-    io::BufReader,
     net::{Ipv4Addr, TcpStream},
-    process::Command,
     str::FromStr,
     thread, time,
 };
 
 use super::{Client, ModelHubError};
-use crate::{state_check_daemon, ClientMachineResponse};
+use crate::{
+    components::{get_run_environment, ENVIRONMENT},
+    ClientMachineResponse
+};
 use postgres_types::{FromSql, ToSql};
 
 pub struct PaperSpaceClientError(String);
@@ -48,12 +48,6 @@ pub enum MachineState {
 #[derive(Deserialize, Serialize)]
 struct Machines {
     machines: Vec<Machine>,
-}
-
-#[derive(Deserialize)]
-struct PaperSpaceServerResponse {
-    status: u16,
-    message: String,
 }
 
 #[derive(Debug)]
@@ -160,7 +154,10 @@ fn create_ssh_session(
 
 impl Client for PaperSpaceClient {
     fn get_base_url() -> String {
-        "https://api.paperspace.com/v1/machines".to_string()
+        match get_run_environment(){
+            ENVIRONMENT::PRODUCTION=> "https://api.paperspace.com/v1/machines".to_string(),
+            ENVIRONMENT::LOCAL=> "http://localhost:8000".to_string()
+        }
     }
     fn new() -> Self {
         let mut headers = header::HeaderMap::new();

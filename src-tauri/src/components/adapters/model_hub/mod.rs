@@ -75,10 +75,6 @@ impl fmt::Display for ModelHubError {
 pub fn create_client(client_type: ClientType) -> Result<impl Client + Clone, ModelHubError> {
     match client_type {
         ClientType::PaperSpace => Ok(paperspace::PaperSpaceClient::new()),
-        _ => Err(ModelHubError(String::from(format!(
-            "'{:?}' is not a configured client",
-            client_type
-        )))),
     }
 }
 
@@ -93,10 +89,10 @@ fn is_machine_off(machine: ClientMachineResponse) -> bool {
 
 pub async fn state_check_daemon(provider: String, machine_id: String) {
     println!("[Daemon-{}]. Started", machine_id);
-    let client = create_client(provider.parse().unwrap()).unwrap();
+    let model_hub_client = create_client(provider.parse().unwrap()).unwrap();
 
     loop {
-        let c = client.clone();
+        let c = model_hub_client.clone();
         let res = c.get_machine_status(&machine_id).await;
 
         match res {

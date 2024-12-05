@@ -1,4 +1,12 @@
 services:
+  app:
+    build:
+      context: ./src-dev
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./src-dev/src/app:/app
+    ports:
+    - 8000:8000
   db:
     image: postgres:latest
     environment:
