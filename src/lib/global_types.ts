@@ -64,6 +64,14 @@ export interface ImageData{
 
 export interface TrainingData {
     machineId: string,
-    trainData:string
+    trainData:TrainingDataDataSeries
 
+}
+
+export interface TrainingDataDataSeries {
+    epoch:string,
+    train_loss:number,
+    train_acc:string,
+    val_loss: number,
+    test_acc:number
 }

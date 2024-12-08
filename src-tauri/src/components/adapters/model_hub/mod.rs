@@ -1,9 +1,12 @@
 use core::fmt;
-use std::{net::Ipv4Addr, str::FromStr, time};
+use std::{net::Ipv4Addr, str::FromStr, time, env};
 
 pub use paperspace::MachineState;
 
-use crate::database::DbClient;
+use crate::{
+    database::DbClient, 
+    components::get_run_environment
+};
 
 pub mod paperspace;
 
@@ -87,8 +90,8 @@ fn is_machine_off(machine: ClientMachineResponse) -> bool {
     false
 }
 
-pub async fn state_check_daemon(provider: String, machine_id: String) {
-    println!("[Daemon-{}]. Started", machine_id);
+pub async fn state_check_daemon(provider: String, machine_id: String, called_by:String) {
+    println!("[StateCheckDaemon-{}-{}]. Started", machine_id, called_by);
     let model_hub_client = create_client(provider.parse().unwrap()).unwrap();
 
     loop {
@@ -98,7 +101,7 @@ pub async fn state_check_daemon(provider: String, machine_id: String) {
         match res {
             Err(err) => {
                 println!(
-                    "[Daemon-{}]. Unable to determine state due to {}",
+                    "[StateCheckDaemon-{}]. Unable to determine state due to {}",
                     machine_id, err
                 )
             }
@@ -127,5 +130,46 @@ pub async fn state_check_daemon(provider: String, machine_id: String) {
             }
         }
         tokio::time::sleep(time::Duration::from_millis(5000)).await;
+    }
+}
+pub fn orkestr8_run() -> String{
+    let access = env::var("AWS_ACCESS_KEY").unwrap();
+    let secret = env::var("AWS_SECRET_KEY").unwrap();
+    let bucket = env::var("AWS_BUCKET_NAME").unwrap();
+
+    let mut command = String::from("nohup bash -c 'pip install --upgrade orkestr8-sdk &&");
+
+    let command_suffix = match get_run_environment(){
+        crate::components::ENVIRONMENT::PRODUCTION=>format!("
+            pip install --force-reinstall -v \'numpy==1.25.2\' && 
+            BASE_IMAGES_DIRECTORY=~/data/images \
+            BASE_RUN_LOCATION=~/data/runs \
+            BASE_MODEL_PATH=~/data/model \
+            orkestr8 run --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket} --model-module=main --remote-file-path=code/foodenie_ml.tar.gz --dest-file-path=foodenie_ml -y"),
+        crate::components::ENVIRONMENT::LOCAL=>String::from("orkestr8 mock_run")
+    };
+
+    command.push_str(&command_suffix);
+    command.push_str("' >> log.txt 2>&1 &");
+    
+    command
+}
+
+pub fn orkestr8_download_model(deployment_name:&str)-> String{
+    let access = env::var("AWS_ACCESS_KEY").unwrap();
+    let secret = env::var("AWS_SECRET_KEY").unwrap();
+    let bucket = env::var("AWS_BUCKET_NAME").unwrap();
+
+    match get_run_environment(){
+        crate::components::ENVIRONMENT::LOCAL=>String::from("orkestr8 mock_run"),
+        crate::components::ENVIRONMENT::PRODUCTION=>format!(
+            "orkestr8 download_model S3 
+            --aws-secret-key={secret} 
+            --aws-access-key={access} 
+            --aws-bucket-name={bucket}  
+            --remote-location=data/ml_state/{deployment_name}
+            --model-location=~/data/model/foodenie_resnet.pth
+            "
+        )
     }
 }

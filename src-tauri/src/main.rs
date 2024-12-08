@@ -94,15 +94,21 @@ fn startup_function() {
         let mut results = Vec::new();
 
         for r in rows {
-            let data = r.get::<&str, &str>("ip_address");
-            if !data.is_empty() {
-                results.push(ModelHubRecord {
-                    machine_id: r.get("machine_id"),
-                    machine_ip: data.parse::<Ipv4Addr>().unwrap(),
-                    project_name: String::from("FOODENIE"),
-                    provider: String::from("paperspace"),
-                })
-            }
+            let data = r.get::<&str, Option<&str>>("ip_address");
+            match data{
+                Some(val) => {
+                    if !val.is_empty() {
+                        results.push(ModelHubRecord {
+                            machine_id: r.get("machine_id"),
+                            machine_ip: val.parse::<Ipv4Addr>().unwrap(),
+                            project_name: String::from("FOODENIE"),
+                            provider: String::from("paperspace"),
+                        })
+                    }
+                },
+                None=>{}
+            };
+            
         }
         results
     });
@@ -113,7 +119,7 @@ fn startup_function() {
     for r in records {
         println!("[Startup] Syncing state of DB with API...\n");
         tauri::async_runtime::spawn(async move {
-            state_check_daemon(r.provider, r.machine_id).await;
+            state_check_daemon(r.provider, r.machine_id, String::from("startup")).await;
         });
     }
 

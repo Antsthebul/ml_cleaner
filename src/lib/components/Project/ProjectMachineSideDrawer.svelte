@@ -244,6 +244,7 @@
     }
 
     onMount( ()=>{
+        console.log("Project side bar mounted")
         let unsub = setInterval(async ()=>{
             try{
 
@@ -268,7 +269,10 @@
             }
             
         },  1000)
-        return ()=>{clearInterval(unsub)}
+        return ()=>{
+            clearInterval(unsub)
+            if (trainingResultPollerUnsub)clearInterval(trainingResultPollerUnsub)
+        }
     })
 
 </script>

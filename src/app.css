@@ -124,6 +124,12 @@
 .w-50{
     width: 50%;
 }
+.w-100{
+    width: 100%;
+}
+.h-25{
+    height: 25%;
+}
 .text-red{
     color: var(--red);
 }
@@ -180,4 +186,10 @@
     background-color: lightgrey;    
     opacity: .2;
     border: 1px solid grey
+}
+.y-scrollable{
+    overflow-y: scroll;
+}
+.test-border{
+    border:1px solid orange ;
 }

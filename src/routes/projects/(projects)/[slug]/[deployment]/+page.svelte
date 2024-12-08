@@ -1,10 +1,6 @@
 <style>
-    #main{
-        display: flex;
-    }
-
-    #main *{
-        flex:1
+    #results{
+        height:150px;
     }
     /* #titleSection{
         display: flex;
@@ -35,7 +31,7 @@
 
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri";
-    import type {Machine, ProjectMachine, Deployment, TrainingData} from "$lib/global_types";
+    import type {Machine, ProjectMachine, Deployment, TrainingData, TrainingDataDataSeries} from "$lib/global_types";
 	import {ProjectMachineSideDrawer} from "$lib";
 	import { page } from "$app/stores";
 
@@ -62,6 +58,14 @@
     let machines = [] as Machine[]
     let selectedMachineIdx = 0;
     
+    function sortSeries(a:TrainingDataDataSeries, b:TrainingDataDataSeries): number{
+        {
+                if (a.epoch < b.epoch){
+                    return -1
+                }
+                return 1
+            }
+    }
 
     
     const updateSelectedMachine = () =>{
@@ -184,16 +188,15 @@
         <!-- <span class="display-block mt-10 mb-5"><b>Classes Key/File: </b>{curDeployment.classes_file}</span> -->
         <span class="display-block mb-5"><b>File(s): </b></span>  
     </div>
-    <div id="main">
+    <div>
 
-        <div>
-			<!--WIll need to submit text metadata from backend-->
-            <!-- <p>Last Modified: {localProject.class_data.lastModified ? new Date(localProject.class_data.lastModified).toLocaleString():""}</p> -->
+        <div class="w-100">
+            <small>Last Modified: Today</small>
             <p><span class="bold">Total Trained Classes: </span> {listOfClasses?.length}</p>
         </div>
-        <div>
+        <div id="results" class="w-100 y-scrollable">
             <h4>Training Results</h4>
-            {#each trainingResults as result}
+            {#each trainingResults.sort(sortSeries) as result}
             <div>
                 <span>
                     <b>Epoch:</b> {result.trainData.epoch}
@@ -203,6 +206,7 @@
                     <b>Test Accuracy: </b>{result.trainData.test_acc}
                 </span>
             </div>
+            <br>
             {/each}
         </div>
     </div>

@@ -22,3 +22,9 @@ CREATE TABLE machines (
     state machine_state NOT NULL,
     ip_address VARCHAR NULL
 );
+
+CREATE TABLE server_machines (
+    id VARCHAR UNIQUE,
+    state machine_state NOT NULL,
+    ip_address VARCHAR NULL
+)

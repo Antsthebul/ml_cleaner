@@ -13,10 +13,9 @@ use std::{
     thread, time,
 };
 
-use super::{Client, ModelHubError};
+use super::{orkestr8_download_model, Client, ModelHubError};
 use crate::{
-    components::{get_run_environment, ENVIRONMENT},
-    ClientMachineResponse
+    components::{get_run_environment, ENVIRONMENT}, orkestr8_run, ClientMachineResponse
 };
 use postgres_types::{FromSql, ToSql};
 
@@ -145,11 +144,18 @@ fn create_ssh_session_backend(
 fn create_ssh_session(
     ip_address: Ipv4Addr,
 ) -> Result<SessionConnector<TcpStream>, PaperSpaceClientError> {
+    let requested_address = match get_run_environment(){
+        ENVIRONMENT::LOCAL => String::from("localhost:22"),
+        ENVIRONMENT::PRODUCTION => format!("{}:22",ip_address)
+    };
     create_session()
-        .username("paperspace")
+        .username(match get_run_environment(){
+            ENVIRONMENT::LOCAL=>"root",
+            ENVIRONMENT::PRODUCTION=>"paperspace"
+        })
         .private_key_path("C:/Users/Antho/.ssh/id_rsa")
-        .connect(format!("{}:22", ip_address))
-        .map_err(|err| PaperSpaceClientError(err.to_string()))
+        .connect(requested_address)
+        .map_err(|err| PaperSpaceClientError(format!("failed to create SSH session. {}",err)))
 }
 
 impl Client for PaperSpaceClient {
@@ -178,8 +184,8 @@ impl Client for PaperSpaceClient {
         }
     }
     async fn stop_train_model(&self, ip_address: Ipv4Addr) -> Result<(), ModelHubError> {
-        let mut s =
-            create_ssh_session_local(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
+        let mut s = create_ssh_session_local(ip_address)
+            .map_err(|err| ModelHubError(err.to_string()))?;
 
         let exec = s.open_exec().unwrap();
 
@@ -196,18 +202,10 @@ impl Client for PaperSpaceClient {
     async fn train_model(self, ip_address: Ipv4Addr) -> Result<(), ModelHubError> {
         let mut s =
             create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
-        let access = env::var("AWS_ACCESS_KEY").unwrap();
-        let secret = env::var("AWS_SECRET_KEY").unwrap();
-        let bucket = env::var("AWS_BUCKET_NAME").unwrap();
 
         let mut exec = s.open_exec().unwrap();
         thread::spawn(move || {
-            let command = format!("nohup bash -c '{{ pip install --upgrade orkestr8-sdk &&
-                pip install --force-reinstall -v \'numpy==1.25.2\' && 
-                BASE_IMAGES_DIRECTORY=~/data/images \
-                BASE_RUN_LOCATION=~/data/runs \
-                BASE_MODEL_PATH=~/data/model \
-                orkestr8 run --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket} --model-module=main --remote-file-path=code/foodenie_ml.tar.gz --dest-file-path=foodenie_ml -y; }}' >> log.txt 2>&1 &");
+            let command = orkestr8_run();
             let _ = exec.send_command(&command);
         });
 
@@ -246,24 +244,13 @@ impl Client for PaperSpaceClient {
         ip_address: Ipv4Addr,
         deployment_name: &str,
     ) -> Result<(), ModelHubError> {
-        let mut s =
+        let mut s = 
             create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
 
-        let access = env::var("AWS_ACCESS_KEY").unwrap();
-        let secret = env::var("AWS_SECRET_KEY").unwrap();
-        let bucket = env::var("AWS_BUCKET_NAME").unwrap();
 
         let mut exec = s.open_exec().unwrap();
 
-        let command = format!(
-            "orkestr8 download_model S3 
-            --aws-secret-key={secret} 
-            --aws-access-key={access} 
-            --aws-bucket-name={bucket}  
-            --remote-location=data/ml_state/{deployment_name}
-            --model-location=~/data/model/foodenie_resnet.pth
-            "
-        );
+        let command = orkestr8_download_model(deployment_name);
         let _ = exec.send_command(&command);
 
         Ok(())
@@ -361,26 +348,24 @@ impl Client for PaperSpaceClient {
         let response = self
             .get_machine_by_machine_id(machine_id)
             .await
-            .map_err(|err| ModelHubError(err.to_string()))?;
+            .map_err(|err| ModelHubError(format!("failed to get_machine_by_id. {}",err)))?;
 
         let mut state = response.state;
         if state == MachineState::Ready {
             if let Ok(mut s) = create_ssh_session_local(response.public_ip_address.unwrap())
-                .map_err(|err| ModelHubError(err.to_string()))
+                .map_err(|err| ModelHubError(format!("session could not be created. {}",err)))
             {
                 let exec = s.open_exec().unwrap();
                 let res: Vec<u8> = exec.send_command("orkestr8 check").unwrap();
                 let output = String::from_utf8(res).unwrap();
-                println!("Ya outputtter {}-> {}", output, state);
                 match output.trim() {
                     "ACTIVE" => state = MachineState::Training,
                     "INACTIVE" => state = MachineState::Ready,
                     x => {
-                        println!("Got unknown output {:?}. Default to READY", x);
-                        state = MachineState::Ready
+                        println!("Got unknown output {:?}", x);
+
                     }
                 }
-
                 s.close()
             }
         }

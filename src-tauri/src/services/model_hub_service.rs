@@ -204,10 +204,13 @@ pub async fn get_machine_status(
                 .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
             let row = rows.first().unwrap();
-            let ip_addr_str: String = row.get(0);
+            let ip_addr_str = row.get::<usize, Option<&str>>(0);
             let mut ip_address = None;
-            if let Ok(ip) = ip_addr_str.parse::<Ipv4Addr>() {
-                ip_address = Some(ip)
+            if let Some(ip_addr) = ip_addr_str{
+
+                if let Ok(ip) = ip_addr.parse::<Ipv4Addr>() {
+                    ip_address = Some(ip)
+                };
             };
             status = Some(ClientMachineResponse {
                 id: m.id.to_owned(),
@@ -274,7 +277,7 @@ pub async fn start_or_stop_machine(
         tauri::async_runtime::spawn(async move {
             println!("[Paperspace] Invoking state poll");
 
-            state_check_daemon(mach.provider.parse().unwrap(), m_id).await;
+            state_check_daemon(mach.provider.parse().unwrap(), m_id, String::from("machine_start")).await;
         });
     } else if machine_action == "stop" {
         let _ = mdl_hub_client
