@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import type { ResponseType, Configuration } from "$lib/global_types";
 
 type ConfigurationAPIError = string;

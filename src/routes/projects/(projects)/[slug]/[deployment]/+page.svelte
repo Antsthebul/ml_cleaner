@@ -30,7 +30,7 @@
 </style>
 
 <script lang="ts">
-	import { invoke } from "@tauri-apps/api/tauri";
+	import { invoke } from "@tauri-apps/api/core";
     import type {Machine, ProjectMachine, Deployment, TrainingData, TrainingDataDataSeries} from "$lib/global_types";
 	import {ProjectMachineSideDrawer} from "$lib";
 	import { page } from "$app/stores";

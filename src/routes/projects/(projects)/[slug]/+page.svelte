@@ -1,6 +1,6 @@
 <script lang="ts">
 	import DependVarWindow from "$lib/components/Project/DependVarWindow.svelte";
-	import { invoke } from "@tauri-apps/api/tauri";
+	import { invoke } from "@tauri-apps/api/core";
 	import { page } from "$app/stores";
 
 	export let data

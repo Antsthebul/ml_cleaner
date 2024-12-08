@@ -1,5 +1,5 @@
 import type { Deployment, Project, ProjectResponse, ResponseType, ClassData, ImageData } from "$lib/global_types";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 export default {
     getProjectDeployment: async function(projectName:string,deployName:string){

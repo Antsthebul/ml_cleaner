@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
+    import { invoke } from "@tauri-apps/api/core";
     import {goto} from "$app/navigation";
     import type {ResponseType } from "../../global_types";
     import {loadProjects} from "../../store";

@@ -2,7 +2,7 @@
 
     import { page } from "$app/stores";
 	import type { SimpleSuccessResponse } from "$lib/global_types";
-	import { invoke } from "@tauri-apps/api/tauri";
+	import { invoke } from "@tauri-apps/api/core";
     import {projects} from "$lib/store"
     import {goto} from "$app/navigation"
 

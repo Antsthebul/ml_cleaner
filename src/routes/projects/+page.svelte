@@ -37,7 +37,7 @@
 
 </style>
 <script lang="ts">
-	import { invoke } from "@tauri-apps/api/tauri";
+	import { invoke } from "@tauri-apps/api/core";
     import {projects, loadProjects} from "../../store"
     import { onMount } from "svelte";
 

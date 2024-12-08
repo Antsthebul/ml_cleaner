@@ -3,7 +3,7 @@
 	import { ImageDataAPI, ProjectAPI } from '$lib';
 	import { Loader } from '$lib';
 	import ImageDataList from '$lib/components/ImageData/ImageDataList.svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
+	import { invoke } from '@tauri-apps/api/core';
     export let data
     
     let slug = $page.params.slug

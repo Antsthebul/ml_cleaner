@@ -37,7 +37,7 @@
 <script lang="ts">
 	import { SideDrawer } from "$lib";
 	import type { ProjectMachine, TrainingData } from "$lib/global_types";
-	import { invoke } from "@tauri-apps/api/tauri";
+	import { invoke } from "@tauri-apps/api/core";
 	import { page } from '$app/stores';
 	import { onMount } from "svelte";
 

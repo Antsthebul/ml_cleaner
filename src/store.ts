@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import type { ResponseType, Project, ProjectResponse } from "$lib/global_types";
 import { ProjectAPI } from "$lib";
 
