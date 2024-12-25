@@ -2,11 +2,11 @@ use crate::cache_reg::update_cache;
 use app::{
     components::adapters::model_hub::MachineState, create_client, database::DbClient,
     file_config::Deployment, state_check_daemon, ClientMachineResponse,
+    time_series_repo::{TrainingData, insert_record}
 };
-use serde::Serialize;
+
 use serde_json::json;
 use std::{collections::HashMap, fmt, net::Ipv4Addr};
-use tauri::utils::pattern;
 
 use super::{
     config_service, data_lake_service, image_verifier_service,
@@ -15,63 +15,8 @@ use super::{
 use rand::prelude::SliceRandom;
 
 use app::Client;
-use regex::Regex;
 
 pub struct ModelHubServiceError(String);
-
-#[derive(Serialize)]
-pub struct TrainingData {
-    epoch: u16,
-    train_acc: String,
-    test_acc: String,
-    time: String,
-    train_loss: f32,
-    val_loss: f32,
-    dir_name: String,
-}
-
-impl TrainingData {
-    fn parse(text: String) -> Self {
-        let pattern = format!(r#"(["a-z\d\._\'%]+)\s*,?"#);
-        let epoch_re = Regex::new(&format!(r"epoch={}", pattern)).unwrap();
-        let train_acc_re = Regex::new(&format!(r"train_acc={}", pattern)).unwrap();
-        let test_acc_re = Regex::new(&format!(r"test_acc={}", pattern)).unwrap();
-        let time_re = Regex::new(&format!("time={}", pattern)).unwrap();
-        let train_loss_re = Regex::new(&format!(r"train_loss={}", pattern)).unwrap();
-        let val_loss_re = Regex::new(&format!(r"val_loss={}", pattern)).unwrap();
-        let dir_name_re = Regex::new(&format!(r"dir_name={}", pattern)).unwrap();
-
-        let epoch = epoch_re.captures(&text).unwrap();
-        let train_acc = train_acc_re.captures(&text).unwrap();
-        let test_acc = test_acc_re.captures(&text).unwrap();
-        let time = time_re.captures(&text).unwrap();
-        let train_loss = train_loss_re.captures(&text).unwrap();
-        let val_loss = val_loss_re.captures(&text).unwrap();
-        let dir_name = dir_name_re.captures(&text).unwrap();
-
-        TrainingData {
-            epoch: epoch.get(1).unwrap().as_str().to_owned().parse().unwrap(),
-            train_acc: train_acc.get(1).unwrap().as_str().to_owned(),
-            test_acc: test_acc.get(1).unwrap().as_str().to_owned(),
-            time: time.get(1).unwrap().as_str().to_owned(),
-            train_loss: train_loss
-                .get(1)
-                .unwrap()
-                .as_str()
-                .to_owned()
-                .parse()
-                .unwrap(),
-            val_loss: val_loss
-                .get(1)
-                .unwrap()
-                .as_str()
-                .to_owned()
-                .parse()
-                .unwrap(),
-            dir_name: dir_name.get(1).unwrap().as_str().to_owned(),
-        }
-    }
-}
 
 impl fmt::Display for ModelHubServiceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -194,7 +139,7 @@ pub async fn get_machine_status(
                     .await
                     .map_err(|err| ModelHubServiceError(err.to_string()))?,
             );
-        } else {
+        } else { // Query local dev server
             let rows = db_client
                 .query(
                     "SELECT ip_address, state FROM machines where machine_id=$1 ",
@@ -202,22 +147,27 @@ pub async fn get_machine_status(
                 )
                 .await
                 .map_err(|err| ModelHubServiceError(err.to_string()))?;
+            
+            if let Some(row) = rows.first(){
 
-            let row = rows.first().unwrap();
-            let ip_addr_str = row.get::<usize, Option<&str>>(0);
-            let mut ip_address = None;
-            if let Some(ip_addr) = ip_addr_str{
-
-                if let Ok(ip) = ip_addr.parse::<Ipv4Addr>() {
-                    ip_address = Some(ip)
+                let ip_addr_str = row.get::<usize, Option<&str>>(0);
+                let mut ip_address = None;
+                if let Some(ip_addr) = ip_addr_str{
+                    
+                    if let Ok(ip) = ip_addr.parse::<Ipv4Addr>() {
+                        ip_address = Some(ip)
+                    };
                 };
+                status = Some(ClientMachineResponse {
+                    id: m.id.to_owned(),
+                    ip_address: ip_address,
+                    state: row.get(1),
+                });
+            }else{
+                println!("Machine ID not found {:?}", &m.id);
             };
-            status = Some(ClientMachineResponse {
-                id: m.id.to_owned(),
-                ip_address: ip_address,
-                state: row.get(1),
-            });
         }
+
         if let Some(s) = status {
             results.push(s)
         } else {
@@ -231,14 +181,14 @@ pub async fn get_machine_status(
 // allows. List machines works by API key
 // (ie. "as a user these are your amchines") whereas Orkestr8ML works by
 // project.
-pub async fn list_machines() {
+// pub async fn list_machines() {
     // let pc = PaperSpaceClient::new();
     // let machines = pc.get_machines().await
     // .map_err(|err|serialize_error(err.to_string()))?;
 
     // let response = serde_json::json!({"data":machines});
     // Ok(serde_json::to_string(&response).unwrap())
-}
+// }
 
 pub async fn start_or_stop_machine(
     deployment_name: &str,
@@ -335,16 +285,26 @@ pub async fn get_training_results(
         .get_training_results(ip_address.parse().unwrap())
         .await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-    println!("Traing result => {}", results);
-
-    if results.contains("connection refused") {
-        return Err(ModelHubServiceError("connection refused".to_string()));
-    };
+    
     if results.trim().is_empty() {
         return Err(ModelHubServiceError("No data".to_owned()));
     };
-    Ok(TrainingData::parse(results))
+
+    if results.contains("connection refused") {
+        return Err(ModelHubServiceError("connection refused".to_string()));
+    };        
+    
+    match TrainingData::parse(&results){
+    Ok(training_data) =>{
+     
+        insert_record(&training_data).await
+        .map_err(|err|ModelHubServiceError(format!("{:?}", err)))?;
+    
+        Ok(training_data)
+        }, 
+
+        Err(err)=>Err(ModelHubServiceError(format!("Parsing error failed {:?}", err)))
+    }
 }
 
 /// This WILL NOT shutdown the machine. Simply invokes a 'shutdown' command to

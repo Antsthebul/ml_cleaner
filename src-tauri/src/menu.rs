@@ -1,8 +1,12 @@
-use tauri::{CustomMenuItem, Menu, Submenu};
+use tauri::{menu::{Menu, MenuItem, Submenu}, App, EventLoopMessage, Wry};
 
-pub fn build_menu() -> Menu {
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let close = CustomMenuItem::new("close".to_string(), "Close");
-    let submenu = Submenu::new("File", Menu::new().add_item(quit).add_item(close));
-    Menu::new().add_submenu(submenu)
-}
+// pub fn build_menu(app:App) -> Menu<Wry<EventLoopMessage>>{
+//     let handle = app.handle();
+//     let quit = MenuItem::new(handle, "Quit", true, None::<&str>).unwrap();
+//     let close = MenuItem::new(handle,"Close", true, None::<&str>).unwrap();
+//     let sub = Submenu::with_items(handle, "File", true, 
+//     &[&quit, &close]).unwrap();
+//     let menu = Menu::with_items(handle, &[&sub]).unwrap();
+
+
+// }

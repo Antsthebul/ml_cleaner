@@ -3,3 +3,4 @@
 
 pub mod database;
 pub mod file_config;
+pub mod time_series_repo;

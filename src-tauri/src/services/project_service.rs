@@ -1,5 +1,5 @@
 use crate::common::response_types::project_responses::{
-    DeploymentResponse, FileDataResponse, ProjectResponse,
+    DeploymentResponse, ProjectResponse,
 };
 use app::file_config::{Configuration, FileAttr, Project};
 

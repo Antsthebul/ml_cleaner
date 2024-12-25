@@ -31,13 +31,19 @@ use crate::comms_endpoint::{
     project_commands::{get_all_projects, get_project_by_project_name, get_project_deployment},
 };
 use dotenvy;
-use menu::build_menu;
+// use menu::build_menu;
 
 fn main() {
     startup_function();
 
     tauri::Builder::default()
-        .menu(build_menu())
+        // .setup(|app|{ 
+        //     let menu = build_menu(app);
+        //     let window = tauri::window::WindowBuilder::new(app, "no-se")
+        //     .menu(menu)
+        //     .build()
+        //     .unwrap();
+        //      Ok(())})
         .invoke_handler(tauri::generate_handler![
             //  Project commands
             get_all_projects,
@@ -100,8 +106,8 @@ fn startup_function() {
                     if !val.is_empty() {
                         results.push(ModelHubRecord {
                             machine_id: r.get("machine_id"),
-                            machine_ip: val.parse::<Ipv4Addr>().unwrap(),
-                            project_name: String::from("FOODENIE"),
+                            // machine_ip: val.parse::<Ipv4Addr>().unwrap(),
+                            // project_name: String::from("FOODENIE"),
                             provider: String::from("paperspace"),
                         })
                     }

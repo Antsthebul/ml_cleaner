@@ -136,22 +136,23 @@ pub fn orkestr8_run() -> String{
     let access = env::var("AWS_ACCESS_KEY").unwrap();
     let secret = env::var("AWS_SECRET_KEY").unwrap();
     let bucket = env::var("AWS_BUCKET_NAME").unwrap();
+    let log_file = get_log_file();
 
-    let mut command = String::from("nohup bash -c 'pip install --upgrade orkestr8-sdk &&");
+    let mut command = format!(r#"nohup bash -c 'echo "Downloading Orkestr8" >> {log_file} && pip install --upgrade orkestr8-sdk >> {log_file} 2>&1 &&"#);
 
     let command_suffix = match get_run_environment(){
-        crate::components::ENVIRONMENT::PRODUCTION=>format!("
-            pip install --force-reinstall -v \'numpy==1.25.2\' && 
+        crate::components::ENVIRONMENT::PRODUCTION=>format!(r#"echo "Invoke Orkestr8 run" >> {log_file} &&
+            pip install --force-reinstall -v \"numpy==1.25.2\" && 
             BASE_IMAGES_DIRECTORY=~/data/images \
             BASE_RUN_LOCATION=~/data/runs \
             BASE_MODEL_PATH=~/data/model \
-            orkestr8 run --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket} --model-module=main --remote-file-path=code/foodenie_ml.tar.gz --dest-file-path=foodenie_ml -y"),
-        crate::components::ENVIRONMENT::LOCAL=>String::from("orkestr8 mock_run")
+            orkestr8 run --aws-secret-key={secret} --aws-access-key={access} --aws-bucket-name={bucket} --model-module=main --remote-file-path=code/foodenie_ml.tar.gz --dest-file-path=foodenie_ml -y"#),
+        crate::components::ENVIRONMENT::LOCAL=>String::from(r#"echo "Invoke Orkestr8 mock_run" >> .ml_cleaner.log && orkestr8 mock_run"#)
     };
 
     command.push_str(&command_suffix);
-    command.push_str("' >> log.txt 2>&1 &");
-    
+    command.push_str("'  &");
+    println!("invoked orkstr8 run command as: {}", command);
     command
 }
 
@@ -161,7 +162,8 @@ pub fn orkestr8_download_model(deployment_name:&str)-> String{
     let bucket = env::var("AWS_BUCKET_NAME").unwrap();
 
     match get_run_environment(){
-        crate::components::ENVIRONMENT::LOCAL=>String::from("orkestr8 mock_run"),
+        crate::components::ENVIRONMENT::LOCAL=>format!("
+            echo \'Invoking Orkestr8 mock_run...\' >> {} && orkestr8 mock_run", get_log_file()),
         crate::components::ENVIRONMENT::PRODUCTION=>format!(
             "orkestr8 download_model S3 
             --aws-secret-key={secret} 
@@ -172,4 +174,8 @@ pub fn orkestr8_download_model(deployment_name:&str)-> String{
             "
         )
     }
+}
+
+fn get_log_file()->String{
+    ".ml_cleaner.log".to_string()
 }

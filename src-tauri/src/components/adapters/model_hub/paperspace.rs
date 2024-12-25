@@ -362,8 +362,12 @@ impl Client for PaperSpaceClient {
                     "ACTIVE" => state = MachineState::Training,
                     "INACTIVE" => state = MachineState::Ready,
                     x => {
-                        println!("Got unknown output {:?}", x);
+                        if x.contains("orkestr8: command not found"){
+                            println!("Orkestr8 not installed on server");
+                        }else{
+                            println!("checking status returned unknown output {:?}", x);
 
+                        }
                     }
                 }
                 s.close()

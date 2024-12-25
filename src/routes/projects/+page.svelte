@@ -6,14 +6,11 @@
     flex-wrap: wrap;
     gap:5px;
 
-
     & .projectLink{
         width: 24%;
 
-
     }
 }
-
 
 #pageHeader{
     display:flex;

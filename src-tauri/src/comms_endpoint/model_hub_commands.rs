@@ -128,13 +128,13 @@ pub async fn stop_train_model(
     Ok(serialize_success("success"))
 }
 
-#[tauri::command]
-pub async fn get_machine_by_machine_id(machine_id: &str) -> Result<String, String> {
-    // let pc = PaperSpaceClient::new();
-    // let result = pc.get_machine_by_machine_id(machine_id).await
-    //     .map_err(|err|serialize_success(err))?;
-    Ok(serialize_success("success"))
-}
+// #[tauri::command]
+// pub async fn get_machine_by_machine_id(machine_id: &str) -> Result<String, String> {
+//     // let pc = PaperSpaceClient::new();
+//     // let result = pc.get_machine_by_machine_id(machine_id).await
+//     //     .map_err(|err|serialize_success(err))?;
+//     Ok(serialize_success("success"))
+// }
 
 #[tauri::command]
 pub async fn get_training_results(
@@ -150,8 +150,9 @@ pub async fn get_training_results(
     let data = model_hub_service::get_training_results(deployment_name, project_name, machine_id)
         .await
         .map_err(|err| serialize_error(err.to_string()))?;
-
-    Ok(serialize_response("data".parse().unwrap(), data))
+    let res = serialize_response("data".parse().unwrap(), data);
+    println!("sending {:?}", res);
+    Ok(res)
 }
 
 #[tauri::command]

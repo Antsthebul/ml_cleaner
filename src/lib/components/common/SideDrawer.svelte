@@ -4,7 +4,7 @@
         position: fixed;
         top:0;
         z-index: 999;
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.792);
         padding:5px 8px;
     }
 </style>

@@ -134,7 +134,7 @@ impl ImageVerifierClient {
             .await
             .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
 
-        println!("gots em");
+
         Ok(rows.iter().map(|r| r.get::<usize, String>(0)).collect())
     }
     /// Will only return file_paths. Paginates by a base64 encoded id. file_paths retuned are related to the

@@ -1,5 +1,13 @@
 services:
+  time_series:
+    image: influxdb:latest
+    volumes:
+      - .influxdb/data:/var/lib/influxdb2
+      - .influxdb/config:/etc/influxdb2
+    ports:
+      - 8086:8086
   app:
+    container_name: server
     build:
       context: ./src-dev
       dockerfile: ./Dockerfile
@@ -9,7 +17,7 @@ services:
     - 8000:8000
     - 22:22
   db:
-    image: postgres:latest
+    image: postgres:16-alpine
     environment:
     - POSTGRES_USER=ml_cleaner
     - POSTGRES_DB=local_db

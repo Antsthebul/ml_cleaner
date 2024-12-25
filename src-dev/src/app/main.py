@@ -81,8 +81,6 @@ async def update_state(machine_id:str,
             ip_address = None
         elif state == MachineState.STARTING:
             ip_address = "198.104.3.4"
-        else:
-            print("No work")
         await machine_repo.update_machine(state, machine.id, ip_address)
         return "ok"
 

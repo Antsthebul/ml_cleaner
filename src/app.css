@@ -5,6 +5,14 @@
     --option-orange:rgb(244, 156, 22);
     --warning:yellow;
 }
+.abs-left{
+    position: absolute;
+    left:0;
+}
+.abs-right{
+    position:absolute;
+    right:0;
+}
 
 .noLink{
     color:black;
@@ -138,6 +146,9 @@
 }
 .text-center{
     text-align: center;
+}
+.text-left{
+    text-align: left;
 }
 .align-center{
     align-items: center;

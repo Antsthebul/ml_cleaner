@@ -13,3 +13,18 @@ run-prd:
 
 stop:
 	docker compose down
+
+setup-time-series:
+	docker run -d -p 8086:8086 \
+		-v ${PWD}/.influxdb/data:/var/lib/influxdb2 \
+		-v ${PWD}/.influxdb/config:/etc/influxdb2 \
+		-e DOCKER_INFLUXDB_INIT_MODE=setup \
+		-e DOCKER_INFLUXDB_INIT_USERNAME=db_user \
+		-e DOCKER_INFLUXDB_INIT_PASSWORD=db_user \
+		-e DOCKER_INFLUXDB_INIT_ORG=my-org \
+		-e DOCKER_INFLUXDB_INIT_BUCKET=my-bucket \
+		-e DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token \
+		-e V1_DB_NAME=v1-db \
+		-e V1_AUTH_USERNAME=v1-user \
+		-e V1_AUTH_PASSWORD=v1-password \		
+		influxdb:2
