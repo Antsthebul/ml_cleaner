@@ -65,12 +65,12 @@
     }
     
     function sortSeries(a:TrainingDataDataSeries, b:TrainingDataDataSeries): number{
-        {
-                if (a.epoch < b.epoch){
-                    return -1
-                }
-                return 1
-            }
+        
+        if (a.epoch < b.epoch){
+            return -1
+        }
+        return 1
+        
     }
 
     

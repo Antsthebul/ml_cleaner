@@ -1,14 +1,15 @@
 <style lang="scss">
      #side_nav{
-        width: 15%;
+        width:min-content;
         text-align: center;
-        margin-right:10px;
+        padding:0 10px;
         background-color: rgb(255, 212, 133);
     }
     
     #side_nav a{
-        display: block;
+        display: flex;
         margin-top: 5px;
+        padding:5px;
         font-weight: 800;
         font-size: 1.2em;
         color:white;
@@ -21,18 +22,63 @@
     }   
 </style>
 <script lang="ts">
-    import {projects} from "../../../store"
+    import { slide } from 'svelte/transition' 
+	import { tweened } from 'svelte/motion';
+
+    import {projects} from "$lib/store"
+    import { FadeInText } from '$lib';
+    import TerminalIcon from "~icons/ph/computer-tower-light"
+    import ProjectIcon from "~icons/ix/project"
+    import PanelLeftIcon from "~icons/lucide/panel-left-open"
+    import PanelRightIcon from "~icons/lucide/panel-right-open"
+    import GrommetIcon from "~icons/grommet-icons/home-rounded"
+	import { cubicInOut } from 'svelte/easing';
+	import { text } from '@sveltejs/kit';
 
 
+    const OPEN = 20   
+    const CLOSED = 5
+
+
+    $: width = tweened(OPEN, {
+        duration: 100,
+        easing: cubicInOut
+    })
+    
+    $: isPanelOpen = (): boolean =>{
+        return $width === OPEN
+    }
+
+
+    $: handleOpenPanel = () =>{
+        if ($width == OPEN){
+            width.set(CLOSED)
+        }else{
+            width.set(OPEN)
+        }
+    }
 </script>
 
-<div id="side_nav">
-
-    <a href="/">Home</a>
-    <a href="/machines">Machines</a>
-    <a href="/projects">Projects</a>
+<div id="side_nav"
+    style ={ `width:${$width}%;`}
+    >
+    <div class="display-inline">
+        <button 
+            class="button button-less display-flex text-white justify-self-end"
+            on:click={handleOpenPanel}
+            >
+            {#if isPanelOpen()}
+                <PanelRightIcon />
+            {:else}
+                <PanelLeftIcon />
+            {/if}
+        </button>
+    </div>
+    <a href="/"><GrommetIcon /> <FadeInText visible={isPanelOpen()} text="&nbsp;Home" /></a>
+    <a href="/machines"> <TerminalIcon /> <FadeInText visible={isPanelOpen() } text="&nbsp;Machines"/></a>
+    <a href="/projects"> <ProjectIcon /> <FadeInText visible={isPanelOpen()} text="&nbsp;Projects" /></a>
     {#each $projects as project}
         <a data-sveltekit-preload-data="tap" href={`/projects/${project.name}`} class="noLink">&nbsp;&nbsp;{project.name}</a>
     {/each}
-    <a href="/editConfig">Edit Config</a>
+    <!-- <a href="/editConfig">Edit Config</a> -->
 </div>

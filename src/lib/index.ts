@@ -11,6 +11,7 @@ export {default as ProjectMachineSideDrawer} from "./components/Project/ProjectM
 export {default as ListComponent} from "./components/common/ListComponent.svelte"
 export {default as UpDownArrow} from "./components/common/UpDownArrow.svelte"
 export {default as Loader} from "./components/common/Loader.svelte"
+export {default as FadeInText} from "./components/common/FadeInText.svelte"
 
 export *  as store from "./store";
 export * as types from "./global_types";
