@@ -1,66 +1,61 @@
 <!--List route-->
 <style>
-#project_section{
-    margin-top: 150px;
-    display: flex;
-    flex-wrap: wrap;
-    gap:5px;
-
-    & .projectLink{
-        width: 24%;
-
+    #page{
+        padding:0 5px;
     }
-}
+        
+    #project_section{
+        margin-top: 150px;
+        display: flex;
+        flex-wrap: wrap;
+        gap:5px;
 
-#pageHeader{
-    display:flex;
-    justify-content: space-between;
-}
+        & .projectLink{
+            width: 24%;
+        }
+    }
 
-#buttonWrapper{
-    align-content: center;
-}
+    #pageHeader{
+        display:flex;
+        justify-content: space-between;
+    }
 
-.button{
-    padding:5px;
-    background-color: lightgrey;
-    border: 1px solid black;
-    border-radius:5px
-}
+    #buttonWrapper{
+        align-content: center;
+    }
 
-.projectLink{
-    display: block;
-}
+    .button{
+        padding:5px;
+        background-color: lightgrey;
+        border: 1px solid black;
+        border-radius:5px
+    }
+
+    .projectLink{
+        display: block;
+    }
 
 </style>
 <script lang="ts">
-	import { invoke } from "@tauri-apps/api/core";
-    import {projects, loadProjects} from "../../store"
+
+    import { projects, loadProjects } from "$lib/store"
     import { onMount } from "svelte";
 
-    let path:string|null = null;
-
-    function checkIfPathExists(path:string){
-        invoke("check_if_path_exists",{ path})
-    }
 
     onMount(async ()=>{
         await loadProjects()
     })
 </script>
 
-<div>
+<div id="page">
     <div id="pageHeader">
 
-        <h1>Repository</h1>
+        <h1>Projects</h1>
         <div id="buttonWrapper">
             <a class="button noLink" href="/create-project">Create Project</a>
         </div>
     </div>
-    
-    <span>Base Folder</span>
-    <input bind:value={path}>
-    <button>Create</button>
+
 </div>
 <section id="project_section">
     {#each $projects as project}
