@@ -22,7 +22,10 @@ body{
     color:black;
     text-decoration: none;
 }
-
+.border-light{
+    border: 1px solid grey;
+    outline: 1px solid grey
+}
 .button{
     border: none;
     border-radius:5px ;
@@ -195,6 +198,9 @@ body{
 .fake-link{
     color: #15ce;
     text-decoration: underline;
+}
+.bg-transparent{
+    background-color: transparent;
 }
 .button-less{
     border: none;

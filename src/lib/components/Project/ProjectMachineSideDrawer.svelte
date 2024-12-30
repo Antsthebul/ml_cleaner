@@ -52,7 +52,7 @@
     export let showSideDrawer = false
     export let trainingResults: TrainingData[]
     
-    let slug = $page.params.slug
+    let projectName = $page.params.projectName
     let deployment = $page.params.deployment
     let error: string | null = null
     let statusMachines:ProjectMachineWithState[] = []
@@ -140,7 +140,7 @@
         if (m!.state === "training"){
 
             try{
-                let response:string = await invoke("get_training_results", {deploymentName:deployment, projectName:slug, machineId})
+                let response:string = await invoke("get_training_results", {deploymentName:deployment, projectName:projectName, machineId})
                 console.log("TRINGIN RESULTS POLLL", response)
                 let result = JSON.parse(response)
                 console.log("not help ", result)
@@ -191,7 +191,7 @@
             }
         
             try{
-                await invoke(funcToCall, {deploymentName:deployment, projectName:slug, machineId})
+                await invoke(funcToCall, {deploymentName:deployment, projectName:projectName, machineId})
             }catch(err){
                 console.error(`Failed to ${action} machine '${machineId}'' due to `,err )
                 error = JSON.stringify(err)
@@ -217,7 +217,7 @@
                 break
         }
         try{
-            await invoke(command, {deploymentName:deployment, projectName:slug, machineId})
+            await invoke(command, {deploymentName:deployment, projectName:projectName, machineId})
         }catch(err){
             machineState = prevTrainState
             try{
@@ -237,7 +237,7 @@
     async function downloadModel(machineId:string){
         try{
 
-            let response:string = await invoke("download_model", {deploymentName:deployment, projectName:slug, machineId})
+            let response:string = await invoke("download_model", {deploymentName:deployment, projectName:projectName, machineId})
         }catch(e){
             console.error("failed to download model")
         }
@@ -248,7 +248,7 @@
         let unsub = setInterval(async ()=>{
             try{
 
-                let res:string = await invoke("get_machine_status",{deploymentName:deployment, projectName:slug} )
+                let res:string = await invoke("get_machine_status",{deploymentName:deployment, projectName:projectName} )
                 let response:{data:ProjectMachineWithState[]}  = JSON.parse(res)
                 
                 statusMachines = [...response.data]

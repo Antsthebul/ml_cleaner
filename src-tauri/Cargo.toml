@@ -1,11 +1,11 @@
 [package]
-name = "app"
+name = "ml_cleaner"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
 repository = ""
-default-run = "app"
+default-run = "ml_cleaner"
 edition = "2021"
 rust-version = "1.60"
 
@@ -29,7 +29,7 @@ base64 = "0.22.1"
 futures-executor = "0.3"
 regex = "1.10.6"
 postgres = "0.19.8"
-tokio-postgres = "0.7.11"
+tokio-postgres = {version = "0.7.11", features = ["with-chrono-0_4"]}
 rand = "0.8.5"
 chrono = "0.4.38"
 postgres-types = { version = "0.2.8", features= ["derive"] }

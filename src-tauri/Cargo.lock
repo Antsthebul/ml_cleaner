@@ -80,36 +80,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
 
 [[package]]
-name = "app"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "bytes",
- "chrono",
- "dotenvy",
- "futures",
- "futures-executor",
- "influxdb2",
- "influxdb2-derive",
- "influxdb2-structmap",
- "num-traits",
- "postgres",
- "postgres-types",
- "rand 0.8.5",
- "regex",
- "reqwest 0.12.7",
- "rust-s3",
- "serde",
- "serde_json",
- "ssh-rs",
- "tauri",
- "tauri-build",
- "tokio",
- "tokio-postgres",
- "toml 0.8.19",
-]
-
-[[package]]
 name = "async-trait"
 version = "0.1.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2352,6 +2322,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "ml_cleaner"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "dotenvy",
+ "futures",
+ "futures-executor",
+ "influxdb2",
+ "influxdb2-derive",
+ "influxdb2-structmap",
+ "num-traits",
+ "postgres",
+ "postgres-types",
+ "rand 0.8.5",
+ "regex",
+ "reqwest 0.12.7",
+ "rust-s3",
+ "serde",
+ "serde_json",
+ "ssh-rs",
+ "tauri",
+ "tauri-build",
+ "tokio",
+ "tokio-postgres",
+ "toml 0.8.19",
+]
+
+[[package]]
 name = "muda"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3222,6 +3222,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f66ea23a2d0e5734297357705193335e0a957696f34bed2f2faefacb2fec336f"
 dependencies = [
  "bytes",
+ "chrono",
  "fallible-iterator",
  "postgres-derive",
  "postgres-protocol",

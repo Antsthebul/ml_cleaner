@@ -6,7 +6,7 @@
 	import { invoke } from '@tauri-apps/api/core';
     export let data
     
-    let slug = $page.params.slug
+    let projectName = $page.params.projectName
     let projectName = $page.url.searchParams.get("project")
     let isLoading = false
 
@@ -24,7 +24,7 @@
 
     async function handlePage(page:string){
         isLoading = true
-        let res = await ImageDataAPI.getUnverifiedImages(projectName as string, slug, page)
+        let res = await ImageDataAPI.getUnverifiedImages(projectName as string, projectName, page)
         imageData = {data:res}
         isLoading=false
     }
@@ -42,7 +42,7 @@
     {#if isLoading}
     <Loader />
     {/if}
-    <h1>{slug}</h1>
+    <h1>{projectName}</h1>
     <button class="button-less fake-link cursor" on:click={()=>history.back()}>Back</button>
     <ImageDataList data={imageData.data} handleDelete={deleteObject} handlePage={handlePage} handleKeep={handleKeep}/>
 </div>

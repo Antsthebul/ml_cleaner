@@ -22,16 +22,17 @@
 
     const INIT_PROJECT = {envs:[]}
 
-    let slug = $page.params.slug
+    let projectName = $page.params.projectName
     
     let curProject = data.project ?? INIT_PROJECT
+    
     $: currentDeployment = $page.params.deployment
 
     async function deleteProject(){
-        let data:string = await invoke("delete_project_by_name", {name:slug})
+        let data:string = await invoke("delete_project_by_name", {name:projectName})
         let result:SimpleSuccessResponse = JSON.parse(data)
         if (result.data){
-            projects.update(projects=>projects.filter(proj=>proj.name !== slug))
+            projects.update(projects=>projects.filter(proj=>proj.name !== projectName))
             goto("/projects")
         }else{
             console.error("Unable to delete project due to ", result)
@@ -39,7 +40,7 @@
     }
 
     async function handleNavigateDeployment(name:string){
-        let baseLink = `/projects/${slug}`
+        let baseLink = `/projects/${projectName}`
         let link = name === "home"? baseLink :`${baseLink}/${name}`
         await goto(link)
     }
@@ -51,13 +52,13 @@
     </div>
     <div style="height:30px;">
 
-        <h1>{currentDeployment ?? slug}</h1>
+        <h1>{currentDeployment ?? projectName}</h1>
 
     </div>
     <div class="text-left">
 
         <button class="fake-link button-less cursor"
-        on:click={async ()=>handleNavigateDeployment("home")}>{slug}</button>
+        on:click={async ()=>handleNavigateDeployment("home")}>{projectName}</button>
         
         <!--Fake breadcrumbs-->
         {#if  currentDeployment}
@@ -67,18 +68,5 @@
         <span class="fake-link">  {currentDeployment}</span>
         {/if}
     </div>
-    <h3>Environments</h3>
-    <div id="environment_section">
-
-        {#each curProject.deployments as dep}
-            <button 
-            class={`button-link ${currentDeployment === dep.name ? "button-link-disabled":''} cursor`}
-                on:click={async ()=>handleNavigateDeployment(dep.name)}
-            disabled={currentDeployment === dep.name}
-            >{dep.name}</button>
-        {/each}
-    </div>
-
-
     <slot></slot>
 </div>

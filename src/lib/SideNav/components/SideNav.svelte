@@ -33,7 +33,7 @@
     import { slide } from 'svelte/transition' 
 	import { tweened } from 'svelte/motion';
 
-    import {projects} from "$lib/store"
+    import {loadProjects, projects} from "$lib/store"
     import { FadeInText } from '$lib';
     import TerminalIcon from "~icons/ph/computer-tower-light"
     import ProjectIcon from "~icons/ix/project"
@@ -47,19 +47,30 @@
 
     const OPEN = 20   
     const CLOSED = 5
-    const MINI_NAV_OPEN = 50
+    const MINI_NAV_OPEN = 0
     const MINI_NAV_CLOSED = -30
     
     let selectionArrowOption:SelectionArrowOption = null
-    let miniNavIsEntered=true
+    let miniNavIsEntered = false
+
+    $: onProjectsOptionHover = async () =>{
+        await loadProjects()
+        miniNavIsEntered = true
+    }
+
     $: resetSelectionArrowOption = () =>{
-        selectionArrowOption = null
+
+        setTimeout(()=>{ // Small delay before closing miniNav
+            if (!miniNavIsEntered)
+            selectionArrowOption = null
+        }, 200)
     } 
 
     $: width = tweened(OPEN, {
         duration: 100,
         easing: cubicInOut
     })
+    
     $: minNavWidth = tweened(MINI_NAV_CLOSED, {
         duration:100,
         easing: cubicInOut
@@ -115,8 +126,8 @@
     </a>
 
     <a href="/projects"
-        on:mouseenter={()=>selectionArrowOption = "PROJECTS"}
-        on:mouseout={resetSelectionArrowOption}
+        on:mouseover={()=>selectionArrowOption = "PROJECTS"}
+        on:mouseleave={resetSelectionArrowOption}
         on:blur={resetSelectionArrowOption}
         on:focus={()=>selectionArrowOption = "PROJECTS"}
         > 
@@ -133,10 +144,11 @@
 <!--svelte-ignore a11y-no-static-element-interactions-->
 <div
     id="min_nav"
-    on:mouseenter={()=>miniNavIsEntered = true}
+    on:mouseover={()=>miniNavIsEntered = true}
     on:focus={()=>miniNavIsEntered = true}
-
-    style={`transform: translateX(${$minNavWidth}px); width:${$minNavWidth === MINI_NAV_CLOSED ? "0":"20"}%;`}>
+    on:blur={()=>{miniNavIsEntered = false;resetSelectionArrowOption()}}
+    on:mouseout={()=>{miniNavIsEntered = false;resetSelectionArrowOption()}}
+    style={`transform: translateX(${$minNavWidth}px); width:${$minNavWidth === MINI_NAV_CLOSED ? "0":"30"}%;`}>
     {#each $projects as project}
         <a data-sveltekit-preload-data="tap" href={`/projects/${project.name}`} class="noLink">&nbsp;&nbsp;{project.name}</a>
     {/each}

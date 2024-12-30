@@ -10,7 +10,7 @@
     import '../app.css';
     import { SideNav } from '$lib';
     import {onMount} from 'svelte'
-    import {loadProjects} from '../store'
+    import {loadProjects} from '$lib/store'
     import ConfigAPI from '$lib/api/ConfigAPI';
 
     onMount( async ()=>{

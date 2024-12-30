@@ -2,22 +2,24 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod cache_reg;
-mod common;
-mod comms_endpoint;
+mod app;
 mod daemon;
 mod menu;
-mod services;
 
-use std::{env, net::Ipv4Addr, path};
+use ml_cleaner::client_adapters::{
+    model_hub::state_check_daemon, 
+    database::DbClient,
+    get_run_environment
+};
+
+use std::{env, path};
 
 mod config;
-use app::{
-    components::get_run_environment,
-    database::DbClient,
-    state_check_daemon};
+
 use daemon::ModelHubRecord;
-// mod repository;
-use crate::comms_endpoint::{
+
+
+use app::comms_endpoint::{
     config_commands::get_config,
     data_lake_commands::get_data_for_class,
     image_verifier_commands::{
@@ -31,19 +33,11 @@ use crate::comms_endpoint::{
     project_commands::{get_all_projects, get_project_by_project_name, get_project_deployment},
 };
 use dotenvy;
-// use menu::build_menu;
 
 fn main() {
     startup_function();
 
     tauri::Builder::default()
-        // .setup(|app|{ 
-        //     let menu = build_menu(app);
-        //     let window = tauri::window::WindowBuilder::new(app, "no-se")
-        //     .menu(menu)
-        //     .build()
-        //     .unwrap();
-        //      Ok(())})
         .invoke_handler(tauri::generate_handler![
             //  Project commands
             get_all_projects,
@@ -71,8 +65,8 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    println!("never makes its");
-}
+
+    }
 
 fn load_env() -> Result<(), std::env::VarError> {
     dotenvy::from_path(path::Path::new("../.env"))

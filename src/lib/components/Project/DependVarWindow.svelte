@@ -33,7 +33,7 @@
     type DependentVariableOptions = typeof DEPENDENT_VARIABLE_OPTIONS[keyof typeof DEPENDENT_VARIABLE_OPTIONS]
     let showDependentVariablesAs:DependentVariableOptions = DEPENDENT_VARIABLE_OPTIONS.CLASSES
     let searchText = ''
-    let slug = $page.params.slug
+    let projectName = $page.params.projectName
     $:listOfClasses
     let searchableClasses = [...listOfClasses]
 
@@ -62,7 +62,7 @@
         
         {#each searchableClasses as className, ix}
         <button class="cursor depVar button-less display-block"
-            on:click={()=>{loading = true; goto(`/data/${className}?project=${slug}`)}}
+            on:click={()=>{loading = true; goto(`/data/${className}?project=${projectName}`)}}
             >{ix+1}). {className}</button>
         {/each}
     </div>
