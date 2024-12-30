@@ -9,6 +9,8 @@ pub mod models;
 
 use std::{fmt,env};
 
+#[cfg(test)]
+mod tests;
 
 pub enum ENVIRONMENT{
     LOCAL,

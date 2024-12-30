@@ -1,9 +1,6 @@
 use crate::cache_reg::update_cache;
 use ml_cleaner::client_adapters::{
-    model_hub::{ Client, MachineState, create_client, state_check_daemon,ClientMachineResponse},
-    database::DbClient,
-    models::Deployment, 
-    time_series_repo::{TrainingData, insert_record}
+    database::{PGClient, AsyncDbClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
 };
 
 use serde_json::json;
@@ -125,7 +122,7 @@ pub async fn get_machine_status(
     let tmp = dep.machines.first().unwrap();
 
     let client = create_client(tmp.provider.parse().unwrap()).unwrap();
-    let db_client = DbClient::new().await.unwrap();
+    let db_client = PGClient::new().await.unwrap();
     let mut results = Vec::new();
 
     for m in &dep.machines {
@@ -215,7 +212,7 @@ pub async fn start_or_stop_machine(
             .await
             .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-        let db_client = DbClient::new()
+        let db_client = PGClient::new()
             .await
             .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
@@ -268,7 +265,7 @@ pub async fn get_training_results(
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
-    let db_client = DbClient::new()
+    let db_client = PGClient::new()
         .await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
@@ -323,7 +320,7 @@ pub async fn stop_train_model(
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
-    let db_client = DbClient::new()
+    let db_client = PGClient::new()
         .await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
@@ -369,7 +366,7 @@ pub async fn train_model(
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
-    let db_client = DbClient::new()
+    let db_client = PGClient::new()
         .await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
 

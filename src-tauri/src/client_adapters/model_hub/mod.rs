@@ -4,7 +4,7 @@ use std::{net::Ipv4Addr, str::FromStr, time, env};
 pub use paperspace::MachineState;
 
 use crate::client_adapters::{
-    database::DbClient, 
+    database::{AsyncDbClient, PGClient}, 
     get_run_environment
 };
 
@@ -106,7 +106,7 @@ pub async fn state_check_daemon(provider: String, machine_id: String, called_by:
                 )
             }
             Ok(val) => {
-                let conn = DbClient::new().await;
+                let conn = PGClient::new().await;
                 if let Ok(db_client) = conn {
                     let ip_address = match &val.ip_address {
                         Some(ip) => ip.to_string(),

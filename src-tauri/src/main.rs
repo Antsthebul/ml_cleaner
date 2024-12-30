@@ -8,9 +8,10 @@ mod menu;
 
 use ml_cleaner::client_adapters::{
     model_hub::state_check_daemon, 
-    database::DbClient,
+    // database::DbClient,
     get_run_environment
 };
+use postgres::Row;
 
 use std::{env, path};
 
@@ -85,11 +86,12 @@ fn startup_function() {
     let _ = cache_reg::create_cache();
 
     let records = tauri::async_runtime::block_on(async move {
-        let db_client = DbClient::new().await.unwrap();
-        let rows = db_client
-            .query("SELECT * FROM machines", &[])
-            .await
-            .unwrap();
+        // let db_client = DbClient::new().await.unwrap();
+        let rows:Vec<Row> = vec![];
+        // let rows = db_client
+        //     .query("SELECT * FROM machines", &[])
+        //     .await
+        //     .unwrap();
 
         let mut results = Vec::new();
 

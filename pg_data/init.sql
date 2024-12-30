@@ -27,20 +27,21 @@ CREATE TABLE server_machines (
     id VARCHAR UNIQUE,
     state machine_state NOT NULL,
     ip_address VARCHAR NULL
-)
+);
 
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL SET DEFAULT NOW()
 
-)
+);
+
 CREATE TABLE deployments(
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL SET DEFAULT NOW(),
     project_id INT NOT NULL,
 
     CONSTRAINT fk_projects FOREIGN KEY (project_id) REFERENCES projects(id)
 
-)
+);

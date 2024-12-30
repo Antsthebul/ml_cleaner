@@ -74,6 +74,10 @@ pub struct FileAttr {
     pub exists: bool,
 }
 impl Project {
+    pub fn add_deployment(&mut self, deployment:Deployment){
+        self.deployments.push(deployment);
+
+    }
     pub fn get_project_deployment(
         &self,
         deploy_name: &str,

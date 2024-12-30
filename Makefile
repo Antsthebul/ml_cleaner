@@ -3,7 +3,7 @@ run-app:
 
 # Starts the DB/ Mock 3rd party API server
 run-local:
-	docker compose up -d
+	docker compose --profile live up -d
 
 build-local:
 	docker compose build
@@ -28,3 +28,9 @@ setup-time-series:
 		-e V1_AUTH_USERNAME=v1-user \
 		-e V1_AUTH_PASSWORD=v1-password \		
 		influxdb:2
+
+# ATOW, --profile down stops ALL services
+run-test:
+	docker-compose --profile test up -d
+	-cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture
+	docker-compose stop test-db

@@ -11,7 +11,8 @@ vite.config.ts.timestamp-*
 ml_cleaner.conf
 
 # Data
-pg_data/data
+pg_data/
+!pg_data/init.sql
 
 # PYTHON
 __pycache__

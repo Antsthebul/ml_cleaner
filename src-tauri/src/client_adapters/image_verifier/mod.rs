@@ -6,7 +6,7 @@ use std::collections::HashMap;
 // use postgres::{Client, NoTls};
 use tokio_postgres::{Client, Error, NoTls};
 
-use crate::client_adapters::database::DbClient;
+use crate::client_adapters::database::{PGClient, AsyncDbClient};
 
 pub struct Pagination {
     pub previous_page: Option<String>,
@@ -34,8 +34,8 @@ pub struct ImageVerifiedRecord {
 }
 
 impl ImageVerifierClient {
-    pub async fn new() -> Result<ImageVerifierClient, ImageVerifierError> {
-        let c = DbClient::new()
+    pub async fn new<>()-> Result<ImageVerifierClient, ImageVerifierError> {
+        let c = PGClient::new()
             .await
             .map_err(|err| ImageVerifierError::ClientRetreivalError(err.to_string()))?;
 
