@@ -32,5 +32,5 @@ setup-time-series:
 # ATOW, --profile down stops ALL services
 run-test:
 	docker-compose --profile test up -d
-	-cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture
+	-cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture --test-threads 1
 	docker-compose stop test-db

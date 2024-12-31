@@ -1,4 +1,5 @@
 use postgres::NoTls;
+use tokio_postgres::Client;
 
 use crate::client_adapters::database::DbClientError;
 

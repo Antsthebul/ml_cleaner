@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use crate::app::common::response_types::project_responses::{
     DeploymentResponse, ProjectResponse,
 };
-use ml_cleaner::client_adapters::models::{Configuration, FileAttr, Project};
+use ml_cleaner::client_adapters::{
+    database::{ project_db::ProjectDb, AsyncDbClient, PGClient},
+    models::{Configuration, Deployment, Project}};
 
 use super::{config_service, data_lake_service};
 
@@ -16,42 +18,54 @@ impl std::fmt::Display for ProjectError {
     }
 }
 
-pub async fn get_all_projects() -> Result<Vec<Project>, ProjectError> {
-    let config = Configuration::get_all_projects().map_err(|err| ProjectError(err.to_string()))?;
-
-    Ok(config.iter().map(|c| c.to_owned()).collect())
+pub struct ProjectService{
+    repo: ProjectDb,
 }
 
-/// Returns serialized Result or Error. The serialized result is
-/// a project with other additional metadata.
-pub async fn get_project_deployment(
-    project_name: &str,
-    deploy_name: &str,
-) -> Result<DeploymentResponse, ProjectError> {
-    let project = config_service::get_project_by_project_name(project_name)
-        .map_err(|err| ProjectError(err.to_string()))?;
+impl ProjectService{
+    pub async fn new() -> Result<Self,ProjectError>{
+        let client = PGClient::new()
+            .await.map_err(|err| ProjectError(format!("project service could not be initialized. {}", err)))?;
 
-    let deployment = project.get_project_deployment(deploy_name).unwrap();
+        let repo = ProjectDb { client };
 
-    // We want to either get the file(s) or generate them
-    // for now fail fast and return single errors, not lists
-    let file:Option<HashMap<&str, &str>> = None;
-    if let Some(files) = file {
-        for f in vec!["train", "test"] {
-            if let None = files.get(f) {
-                return Err(ProjectError(String::from(format!("No {:?} file found", f))));
-            }
+        Ok(ProjectService{repo})
         }
-    };
-    let dr = DeploymentResponse {
-        name: deployment.name,
-        machines: deployment.machines,
-        files: None,
-    };
+    
+    
+    pub async fn get_all_projects(&self) -> Result<Vec<Project>, ProjectError> {
+        Ok(self.repo.get_all_projects()
+        .await
+        .map_err(|err|ProjectError(format!("project service failed to get all projects {}", err)))?
+        )  
+    }
 
-    Ok(dr)
+    pub async fn get_project_by_name(&self, name:&str) -> Result<Project, ProjectError>{
+        Ok(self.repo.get_project_by_name(name)
+        .await
+        .map_err(|err|ProjectError(format!("project service failed to get projects by name {}", err)))?
+        )
+    }
+    
+    
+    /// Returns serialized Result or Error. The serialized result is
+    /// a project with other additional metadata.
+    pub async fn get_project_deployment_by_name(
+        &self,
+        project_name: &str,
+        deploy_name: &str,
+    ) -> Result<Deployment, ProjectError> {
+        Ok(
+            self.repo.get_project_deployment_by_name(project_name, deploy_name)
+            .await
+            .map_err(|err|
+                ProjectError(format!(
+                    "project service unable to retreive deployment using  
+                    project={}, deployment={}. {}", project_name, deploy_name, err)))?
+        )
+    }
+    
 }
-
 /// Returns a Project WITH dynamic attribute populates. This
 /// is different from the config, which returns a bare config provided
 /// attribute on a Project

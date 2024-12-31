@@ -1,4 +1,3 @@
-pub mod environment_db;
 pub mod project_db;
 
 use core::fmt;
