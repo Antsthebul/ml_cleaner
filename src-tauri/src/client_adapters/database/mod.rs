@@ -1,8 +1,13 @@
 pub mod project_db;
+pub mod machine_db;
+pub mod activity_log_db;
 
 use core::fmt;
 
 use tokio_postgres::{Client, NoTls};
+
+#[cfg(test)]
+mod machine_db_test;
 
 
 #[derive(Debug)]

@@ -7,7 +7,7 @@ use influxdb2::{Client,  FromDataPoint, models::Query};
 use influxdb2_derive::WriteDataPoint;
 use regex:: Regex;
 use futures::prelude::*;
-use influxdb2::models::DataPoint;
+use crate::client_adapters::utils::{parse_value_from_regex, ParseError};
 
 #[cfg(test)]
 mod tests;
@@ -15,8 +15,6 @@ mod tests;
 #[derive(Debug)]
 pub struct TSDBClientError(String);
 
-#[derive(Debug)]
-pub struct ParseError(String);
 
 #[derive(Default, Serialize, Clone, WriteDataPoint)]
 #[measurement = "training_data"]
@@ -65,26 +63,7 @@ impl TrainingData {
             })
         }
 }
-fn parse_value_from_regex<T>(regex:Regex, text:&str) -> Result<T, ParseError>
-where 
-    T: FromStr,
-    <T as FromStr>::Err:Debug{
-    match regex.captures(&text){
-        Some(val)=>{
-            let res = val.get(1).ok_or(ParseError(format!("group not found for pattern '{:?}'", regex)));
-            if let Err(err) = res{
-                return Err(err)
-            } 
-            return Ok(
-                res.unwrap().as_str()
-                .to_owned()
-                .parse::<T>()
-                .map_err(|err|ParseError(format!("group found for {:?} but parse could not convert to expected type. {:?}", err, regex)))?
-            )
-        },
-        None=> Err(ParseError(format!("Pattern not found for {:?}",regex )))
-    }
-}
+
 pub async fn insert_record(training_data:&TrainingData) -> Result<(), TSDBClientError>{
     let client = Client::new("http://host.docker.internal:8086","org", "aLT23G4KUIkAznnGtPQkxlkO5z7OREwI0ECUrZg7cpXqo6xi_XUqMW6qROGWPg_5JpmbXc7XKwvhoiKHhSVHxw==");
     client.write("bucket", stream::iter(vec![training_data.clone()])).await

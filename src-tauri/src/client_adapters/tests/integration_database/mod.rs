@@ -5,7 +5,7 @@ use crate::client_adapters::database::DbClientError;
 
 
 mod project_db_int_test;
-
+mod machine_db_int_test;
 pub struct MockDbClient{}
 
 impl MockDbClient{

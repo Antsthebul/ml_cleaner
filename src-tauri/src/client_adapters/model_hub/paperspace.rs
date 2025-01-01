@@ -44,10 +44,6 @@ pub enum MachineState {
     Training,
 }
 
-#[derive(Deserialize, Serialize)]
-struct Machines {
-    machines: Vec<Machine>,
-}
 
 #[derive(Debug)]
 enum RequestType {

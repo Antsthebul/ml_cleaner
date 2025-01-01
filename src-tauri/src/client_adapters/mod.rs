@@ -6,6 +6,7 @@ pub mod model_hub;
 pub mod time_series_repo;
 pub mod repository;
 pub mod models;
+pub mod utils;
 
 use std::{fmt,env};
 

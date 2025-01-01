@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::app::common::response_types::project_responses::{
     DeploymentResponse, ProjectResponse,
 };
 use ml_cleaner::client_adapters::{
-    database::{ project_db::ProjectDb, AsyncDbClient, PGClient},
+    database::{ activity_log_db::ActivityLogDb, project_db::ProjectDb, AsyncDbClient, PGClient},
     models::{Configuration, Deployment, Project}};
 
 use super::{config_service, data_lake_service};
@@ -20,16 +20,20 @@ impl std::fmt::Display for ProjectError {
 
 pub struct ProjectService{
     repo: ProjectDb,
+    activity_repo: ActivityLogDb
 }
 
 impl ProjectService{
     pub async fn new() -> Result<Self,ProjectError>{
-        let client = PGClient::new()
+        let pg_client = PGClient::new()
             .await.map_err(|err| ProjectError(format!("project service could not be initialized. {}", err)))?;
+        
+        let client = Arc::new(pg_client);
+        let repo = ProjectDb { client:client.clone() };
+        let activity_repo = ActivityLogDb{client:client.clone()};
+        
 
-        let repo = ProjectDb { client };
-
-        Ok(ProjectService{repo})
+        Ok(ProjectService{repo, activity_repo})
         }
     
     
@@ -72,16 +76,8 @@ impl ProjectService{
 pub async fn get_project_by_project_name(
     project_name: &str,
 ) -> Result<ProjectResponse<Project>, ProjectError> {
-    let mut project = config_service::get_project_by_project_name(project_name)
+    let  project = config_service::get_project_by_project_name(project_name)
         .map_err(|err| ProjectError(err.to_string()))?;
-
-    let base_train_data_path = "data/base/test.json";
-    let base_test_data_path = "data/base/test.json";
-
-    // Check if files exists
-    let train_exists = check_if_file_exists(project_name, &base_train_data_path).await?;
-    let test_exists = check_if_file_exists(project_name, &base_test_data_path).await?;
-
 
     let pr = ProjectResponse { project };
     Ok(pr)
