@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::app::common::response_types::project_responses::{
     DeploymentResponse, ProjectResponse,
 };
+use deadpool_postgres::Pool;
 use ml_cleaner::client_adapters::{
     database::{ activity_log_db::ActivityLogDb, project_db::ProjectDb, AsyncDbClient, PGClient},
     models::{Configuration, Deployment, Project}};
@@ -24,13 +25,17 @@ pub struct ProjectService{
 }
 
 impl ProjectService{
-    pub async fn new() -> Result<Self,ProjectError>{
-        let pg_client = PGClient::new()
-            .await.map_err(|err| ProjectError(format!("project service could not be initialized. {}", err)))?;
+    pub async fn new(pool:Pool) -> Result<Self,ProjectError>{
+        let conn1 = pool.get()
+            .await
+            .map_err(|err| ProjectError(format!("project service could not be initialized. {}", err)))?;
         
-        let client = Arc::new(pg_client);
-        let repo = ProjectDb { client:client.clone() };
-        let activity_repo = ActivityLogDb{client:client.clone()};
+        let conn2 = pool.get()
+            .await
+            .map_err(|err| ProjectError(format!("project service could not be initialized. {}", err)))?;
+        
+        let repo = ProjectDb { client:conn1 };
+        let activity_repo = ActivityLogDb{ client:conn2 };
         
 
         Ok(ProjectService{repo, activity_repo})
@@ -67,6 +72,38 @@ impl ProjectService{
                     "project service unable to retreive deployment using  
                     project={}, deployment={}. {}", project_name, deploy_name, err)))?
         )
+    }
+
+    pub async fn create_project(&self, new_project_name:&str) -> Result<Project, ProjectError>{
+        self.repo.upsert_project(new_project_name)
+            .await
+            .map_err(|err|ProjectError(format!("create project service could not create project. {err}")))?;
+
+        let project = self.get_project_by_name(new_project_name)
+            .await
+            .map_err(|err|ProjectError(format!("create project service failed to retreive new project. {err}")))?;
+
+        self.activity_repo.create_activity_log("create".parse().unwrap(), "project was created")
+            .await
+            .map_err(|err|ProjectError(format!("project service failed to create activiate log. {err}")))?;
+
+        Ok(project)   
+    }
+
+    pub async fn delete_deployment(
+        &self, 
+        project_name: &str,
+        deployment_name: &str
+    )-> Result<(), ProjectError>{
+        self.repo.delete_deployment(project_name, deployment_name)
+            .await
+            .map_err(|err|ProjectError(format!("delete deployment failed. {err}")))?;
+        
+        self.activity_repo.create_activity_log("delete".parse().unwrap(),
+         format!("{project_name} -> {deployment_name} was deleted").as_str())
+            .await
+            .map_err(|err|ProjectError(format!("failed to create activiity log, {err}")))?;
+        Ok(())
     }
     
 }

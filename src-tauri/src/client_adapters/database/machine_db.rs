@@ -1,6 +1,7 @@
 use std::net::Ipv4Addr;
 
-use tokio_postgres::Client;
+use deadpool_postgres::Object;
+use postgres::Row;
 
 use crate::client_adapters::{
     model_hub::MachineState, 
@@ -23,13 +24,34 @@ pub struct Machine{
     pub model: String,
     pub price:f32,
     pub state:MachineState,
-    pub ip_address: Option<Ipv4Addr>
+    pub ip_address: Option<Ipv4Addr>,
+    pub provider: String
 }
 
 impl Machine {
     pub fn from_ser_map(data_str:&str)-> Result<Machine, ParseError>{
         Ok(serde_json::from_str::<Machine>(data_str)
             .map_err(|err|ParseError(format!("unable to parse from_str. {err}")))?)
+    }
+
+    pub fn from_row(row:Row) -> Result<Self, ParseError>{
+        let mut ip_address = None;
+        if let Some(ip_addr) = row.get::<_, Option<String>>("ip_address"){
+            ip_address = ip_addr.parse().ok();
+            if None  == ip_address {
+                return Err(ParseError("ip_address could not be parse".into()))
+            }
+            
+        };            
+        Ok(Self{
+            machine_id: row.get("machine_id"),
+            model: row.get("model"),
+            price:row.get("price"),
+            state:row.get("state"),
+            ip_address:ip_address,
+            provider: row.get("provider")
+        })
+
     }
 }
 
@@ -42,7 +64,7 @@ impl MachineCreate {
 }
 
 pub struct MachineDb{
-    pub client: Client
+    pub client: Object
 }
 
 impl MachineDb{
@@ -66,21 +88,10 @@ impl MachineDb{
             return Err(DbClientError(format!("multiples rows found for machine={machine_id}")))
         }
         let row = &rows[0];
-        let mut ip_address = None;
-        if let Some(ip_addr) = row.get::<_, Option<String>>("ip_address"){
-            ip_address = ip_addr.parse().ok();
-            if None  == ip_address {
-                return Err(DbClientError("ip_address could not be parse".into()))
-            }
-            
-        };
-        Ok(Machine{
-            machine_id: row.get("machine_id"),
-            model: row.get("model"),
-            price:row.get("price"),
-            state:row.get("state"),
-            ip_address:ip_address
-        })
+        let m = Machine::from_row(row.clone())
+            .map_err(|err|DbClientError(format!("get machine by id failed. {:?}", err)))?;
+        
+        Ok(m)
 
     }
     /// Operates like a 'PUT' action to update `machines`
@@ -97,7 +108,23 @@ impl MachineDb{
 
     pub async fn delete_machine(&self, machine_id:&str) -> Result<(), DbClientError>{
         let _ = self.client.execute("DELETE FROM machines WHERE machine_id=$1", &[&machine_id])
-            .await.map_err(|err| DbClientError(format!("failed to delete machine={machine_id}. {err}")));
+            .await
+            .map_err(|err| DbClientError(format!("failed to delete machine={machine_id}. {err}")))?;
         Ok(())
+    }
+    
+    pub async fn get_all_machines(&self) -> Result<Vec<Machine>, DbClientError>{
+        let rows = self.client.query("SELECT * FROM machines", &[])
+            .await
+            .map_err(|err| DbClientError(format!("failed to retrieve all machines. {err}")))?;
+
+        let mut results = vec![];
+
+        for r in rows{
+            let m = Machine::from_row(r)
+                .map_err(|err|DbClientError(format!("get all machines failed. {:?}", err)))?;
+            results.push(m)
+        }
+        Ok(results)
     }
 }

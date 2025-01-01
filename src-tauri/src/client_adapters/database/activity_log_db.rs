@@ -1,6 +1,6 @@
-use std::{fmt::Display, str::FromStr, sync::Arc};
+use std::{fmt::Display, str::FromStr};
 
-use tokio_postgres::Client;
+use deadpool_postgres::Object;
 
 use super::DbClientError;
 
@@ -32,7 +32,7 @@ impl Display for ActivityLogAction{
 }
 
 pub struct ActivityLogDb{
-    pub client: Arc<Client>
+    pub client: Object
 }
 
 impl ActivityLogDb{

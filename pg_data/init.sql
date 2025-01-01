@@ -22,7 +22,8 @@ CREATE TABLE machines (
     state machine_state NOT NULL,
     ip_address VARCHAR NULL,
     type VARCHAR NOT NULL,
-    price REAL NOT NULL
+    price REAL NOT NULL,
+    provider VARCHAR NOT NULL
 );
 
 CREATE TABLE server_machines (

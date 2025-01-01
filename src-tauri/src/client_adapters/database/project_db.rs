@@ -2,7 +2,7 @@ use std::{
     sync::Arc,
     collections::HashMap};
 
-use tokio_postgres::Client;
+use deadpool_postgres::Object;
 
 use crate::client_adapters::models::{Deployment, Project};
 
@@ -10,7 +10,7 @@ use super::DbClientError;
 
 
 pub struct ProjectDb{
-    pub client: Arc<Client>
+    pub client: Object
 }
 
 impl ProjectDb{

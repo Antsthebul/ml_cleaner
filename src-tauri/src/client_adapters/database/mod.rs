@@ -3,8 +3,12 @@ pub mod machine_db;
 pub mod activity_log_db;
 
 use core::fmt;
+use std::{collections::HashMap, env};
 
+use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use tokio_postgres::{Client, NoTls};
+
+
 
 #[cfg(test)]
 mod machine_db_test;
@@ -44,4 +48,47 @@ impl AsyncDbClient for PGClient {
         });
         Ok(c)
     }
+}
+pub struct ConnectionArgs{
+    host: String,
+    user:String,
+    port: u16,
+    password:String,
+    name:String
+}
+pub fn build_conn_args() -> ConnectionArgs{
+    ConnectionArgs{
+        host: "host.docker.internal".into(),
+        user:"ml_cleaner".into(),
+        port:5432,
+        password:"ml_cleaner".into(),
+        name:"local_db".into()
+    }
+}
+pub fn build_test_conn_args()->ConnectionArgs{
+    ConnectionArgs{
+        host: "host.docker.internal".into(),
+        user:"ml_cleaner".into(),
+        port:5433,
+        password:"ml_cleaner".into(),
+        name:"test".into()
+    }
+}
+
+pub fn create_connection_pool(conn_args:ConnectionArgs) -> Pool{
+    
+    let mut cfg = Config::new();
+    cfg.manager = Some(ManagerConfig {
+        recycling_method: RecyclingMethod::Fast,
+    });           
+    
+    cfg.host=Some(conn_args.host);
+    cfg.user=Some(conn_args.user);
+    cfg.password=Some(conn_args.password); 
+    cfg.dbname=Some(conn_args.name);
+    cfg.port=Some(conn_args.port);
+
+    cfg.create_pool(Some(Runtime::Tokio1), NoTls).unwrap()
+
+
 }

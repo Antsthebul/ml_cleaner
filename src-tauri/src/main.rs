@@ -6,12 +6,12 @@ mod app;
 mod daemon;
 mod menu;
 
+use tauri::Manager;
 use ml_cleaner::client_adapters::{
-    model_hub::state_check_daemon, 
-    // database::DbClient,
-    get_run_environment
+    database::{build_conn_args, create_connection_pool, machine_db::MachineDb}, get_run_environment, model_hub::state_check_daemon
 };
 use postgres::Row;
+use tokio::sync::Mutex;
 
 use std::{env, path};
 
@@ -31,21 +31,49 @@ use app::comms_endpoint::{
         download_model, generate_test_train_data, get_machine_status, get_training_results,
         start_machine, stop_machine, stop_train_model, train_model,
     },
-    project_commands::{get_all_projects, get_project_by_project_name, get_project_deployment},
+    project_commands::{
+        create_project,
+        get_all_projects, 
+        get_project_by_project_name, 
+        get_project_deployment,
+        delete_deployment
+    },
 };
 use dotenvy;
 
+use deadpool_postgres::Pool;
+
+pub struct AppState{
+    pool: Pool
+}
+
+impl Default for AppState{
+    fn default() -> Self {
+        Self{
+            pool: create_connection_pool(build_conn_args())
+        }
+    }
+}
+
+
 fn main() {
-    startup_function();
+    let app_state = AppState::default();
+    startup_function(&app_state.pool);
 
     tauri::Builder::default()
+        .setup(|app|{
+            app.manage(Mutex::new(app_state));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             //  Project commands
+            create_project,
             get_all_projects,
             get_project_by_project_name,
             get_project_deployment,
             get_config,
             get_data_for_class,
+            delete_deployment,
             remove_image,
             sync_data,
             // Image verifier commands
@@ -80,39 +108,23 @@ fn load_env() -> Result<(), std::env::VarError> {
     Ok(())
 }
 
-fn startup_function() {
+fn startup_function(pool: &Pool) {
     println!("Running Startup functions...");
     load_env().expect("should be failed to find requried env vars");
     let _ = cache_reg::create_cache();
 
     let records = tauri::async_runtime::block_on(async move {
-        // let db_client = DbClient::new().await.unwrap();
-        let rows:Vec<Row> = vec![];
-        // let rows = db_client
-        //     .query("SELECT * FROM machines", &[])
-        //     .await
-        //     .unwrap();
+        let machine_db = MachineDb{client: pool.get().await.unwrap()};
 
-        let mut results = Vec::new();
-
-        for r in rows {
-            let data = r.get::<&str, Option<&str>>("ip_address");
-            match data{
-                Some(val) => {
-                    if !val.is_empty() {
-                        results.push(ModelHubRecord {
-                            machine_id: r.get("machine_id"),
-                            // machine_ip: val.parse::<Ipv4Addr>().unwrap(),
-                            // project_name: String::from("FOODENIE"),
-                            provider: String::from("paperspace"),
-                        })
-                    }
-                },
-                None=>{}
-            };
-            
+        let mut results = machine_db.get_all_machines()
+            .await;
+        
+        match results{
+            Ok(machines)=>machines,
+            Err(err)=> {println!("Unable to sync machines. {err}");
+                        vec![]}
         }
-        results
+
     });
 
     if records.len() == 0 {

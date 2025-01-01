@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use crate::client_adapters::database::project_db::ProjectDb;
 use super::MockDbClient;
 
@@ -22,7 +21,7 @@ async fn test_get_all_projects(){
             .await.unwrap();
     }
 
-    let project_db = ProjectDb{client:Arc::new(client)};
+    let project_db = ProjectDb{client};
     
     // ACT
     let results = project_db.get_all_projects().await.unwrap();
@@ -52,7 +51,7 @@ async fn get_project_by_name(){
                 .await.unwrap();
         }
     
-        let project_db = ProjectDb{client:Arc::new(client)};
+        let project_db = ProjectDb{client};
         
         // ACT
         let project = project_db.get_project_by_name(&project_name).await.unwrap();
@@ -82,7 +81,7 @@ async fn get_project_deployment_by_name(){
             .await.unwrap();
     }
      
-    let project_db = ProjectDb{client:Arc::new(client)};
+    let project_db = ProjectDb{client};
     
     // ACT
     let deployment = project_db.get_project_deployment_by_name(&project_name, "dep-test1")
@@ -104,7 +103,7 @@ async fn create_project(){
         let _ = client.execute("DELETE FROM projects", &[])
             .await.unwrap();
 
-        let project_db = ProjectDb{client:Arc::new(client)};
+        let project_db = ProjectDb{client};
     
         // ACT
         let _ = project_db.upsert_project(&project_name)
@@ -130,7 +129,7 @@ async fn create_deployment(){
 
     let _ = client.execute("INSERT INTO projects (name) VALUES($1)", &[&project_name]).await;
 
-    let project_db = ProjectDb{client:Arc::new(client)};
+    let project_db = ProjectDb{client};
 
     // ACT
     let _ = project_db.upsert_deployment(&project_name, &deployment_name)
@@ -166,7 +165,7 @@ async fn delete_deployment(){
 
    // ACT
 
-   let project_db = ProjectDb{client:Arc::new(client)};
+   let project_db = ProjectDb{client};
    
    let _ = project_db.delete_deployment(&project_name,deployment_name)
         .await.unwrap();
