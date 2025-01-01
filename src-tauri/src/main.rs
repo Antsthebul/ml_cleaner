@@ -58,7 +58,7 @@ impl Default for AppState{
 
 fn main() {
     let app_state = AppState::default();
-    startup_function(&app_state.pool);
+    startup_function(app_state.pool.clone());
 
     tauri::Builder::default()
         .setup(|app|{
@@ -108,15 +108,16 @@ fn load_env() -> Result<(), std::env::VarError> {
     Ok(())
 }
 
-fn startup_function(pool: &Pool) {
+fn startup_function(pool: Pool) {
     println!("Running Startup functions...");
     load_env().expect("should be failed to find requried env vars");
     let _ = cache_reg::create_cache();
 
+    let pool_clone = pool.clone();
     let records = tauri::async_runtime::block_on(async move {
-        let machine_db = MachineDb{client: pool.get().await.unwrap()};
+        let machine_db = MachineDb{client: pool_clone.get().await.unwrap()};
 
-        let mut results = machine_db.get_all_machines()
+        let results = machine_db.get_all_machines()
             .await;
         
         match results{
@@ -131,11 +132,12 @@ fn startup_function(pool: &Pool) {
         println!("All machines sync'd at this time")
     }
     for r in records {
+        let pool_clone = pool.clone();
         println!("[Startup] Syncing state of DB with API...\n");
         tauri::async_runtime::spawn(async move {
-            state_check_daemon(r.provider, r.machine_id, String::from("startup")).await;
+            state_check_daemon(pool_clone, r, String::from("startup")).await;
         });
-    }
+    };
 
     println!("Startup process complete!\n");
     println!("Running in **{}**", get_run_environment())

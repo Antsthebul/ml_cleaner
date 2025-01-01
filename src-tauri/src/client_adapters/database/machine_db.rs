@@ -37,9 +37,11 @@ impl Machine {
     pub fn from_row(row:Row) -> Result<Self, ParseError>{
         let mut ip_address = None;
         if let Some(ip_addr) = row.get::<_, Option<String>>("ip_address"){
-            ip_address = ip_addr.parse().ok();
-            if None  == ip_address {
-                return Err(ParseError("ip_address could not be parse".into()))
+            if ip_addr!="".to_string(){
+                ip_address = ip_addr.parse().ok();
+                if None  == ip_address {
+                    return Err(ParseError(format!("ip_address could not be parsed from {ip_addr}")))
+                }
             }
             
         };            

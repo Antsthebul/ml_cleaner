@@ -1,7 +1,9 @@
-use crate::app::{
+use tauri::State;
+
+use crate::{app::{
     common::response_types::{serialize_error, serialize_response, serialize_success},
     services::model_hub_service,
-};
+}, AppState};
 
 #[tauri::command]
 pub async fn generate_test_train_data(project_name: &str) -> Result<String, String> {
@@ -54,6 +56,7 @@ pub async fn list_machines() -> Result<String, String> {
 
 #[tauri::command]
 pub async fn start_machine(
+    state: State<'_, AppState>,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
@@ -64,6 +67,7 @@ pub async fn start_machine(
     );
 
     let _ = model_hub_service::start_or_stop_machine(
+        state.pool.clone(),
         deployment_name,
         project_name,
         machine_id,
@@ -77,6 +81,7 @@ pub async fn start_machine(
 
 #[tauri::command]
 pub async fn stop_machine(
+    state: State<'_, AppState>,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
@@ -87,7 +92,9 @@ pub async fn stop_machine(
     );
 
     let _ =
-        model_hub_service::start_or_stop_machine(deployment_name, project_name, machine_id, "stop")
+        model_hub_service::start_or_stop_machine(
+            state.pool.clone(),
+            deployment_name, project_name, machine_id, "stop")
             .await
             .map_err(|err| serialize_error(err.to_string()))?;
 

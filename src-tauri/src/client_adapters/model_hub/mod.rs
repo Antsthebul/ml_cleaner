@@ -1,10 +1,11 @@
 use core::fmt;
 use std::{net::Ipv4Addr, str::FromStr, time, env};
 
+use deadpool_postgres::Pool;
 pub use paperspace::MachineState;
 
 use crate::client_adapters::{
-    database::{AsyncDbClient, PGClient}, 
+    database::{machine_db::{Machine, MachineDb}, AsyncDbClient, PGClient}, 
     get_run_environment
 };
 
@@ -81,50 +82,52 @@ pub fn create_client(client_type: ClientType) -> Result<impl Client + Clone, Mod
     }
 }
 
-fn is_machine_off(machine: ClientMachineResponse) -> bool {
+fn is_machine_off(machine_state:MachineState) -> bool {
     let off_states = vec![MachineState::Off];
 
-    if off_states.contains(&machine.state) {
+    if off_states.contains(&machine_state) {
         return true;
     }
     false
 }
 
-pub async fn state_check_daemon(provider: String, machine_id: String, called_by:String) {
-    println!("[StateCheckDaemon-{}-{}]. Started", machine_id, called_by);
-    let model_hub_client = create_client(provider.parse().unwrap()).unwrap();
-
+pub async fn state_check_daemon(pool: Pool,machine:Machine, called_by:String) {
+    println!("[StateCheckDaemon-{}-{}]. Started", machine.machine_id, called_by);
+    let model_hub_client = create_client(machine.provider.parse().unwrap()).unwrap();
+    
     loop {
         let c = model_hub_client.clone();
-        let res = c.get_machine_status(&machine_id).await;
+        let res = c.get_machine_status(machine.machine_id.to_string().as_str()).await;
 
         match res {
             Err(err) => {
                 println!(
                     "[StateCheckDaemon-{}]. Unable to determine state due to {}",
-                    machine_id, err
+                    machine.machine_id, err
                 )
             }
-            Ok(val) => {
-                let conn = PGClient::new().await;
-                if let Ok(db_client) = conn {
-                    let ip_address = match &val.ip_address {
-                        Some(ip) => ip.to_string(),
-                        None => "".to_string(),
-                    };
-                    let _ = db_client
-                        .execute(
-                            "UPDATE machines set state=$1, ip_address=$2 where machine_id=$3",
-                            &[&val.state, &ip_address, &machine_id],
-                        )
-                        .await
-                        .unwrap();
-                } else {
-                    println!("Failed to connect to db")
-                }
+            Ok(machine_response) => {
+                let machine_db = MachineDb{client: pool.get().await.unwrap()};
+            
+                let ip_address = match &machine_response.ip_address {
+                    Some(ip) => Some(ip.to_string().parse().unwrap()),
+                    None => None,
+                };
+                let new_machine = Machine{
+                    provider:machine.provider.to_owned(),
+                    model:machine.model.to_owned(),
+                    price:machine.price, 
+                    machine_id:machine.machine_id.to_owned(),
+                    state: machine_response.state.clone(),
+                    ip_address:ip_address
+                };
+                let _= machine_db.update_machine(new_machine)
+                    .await
+                    .unwrap();
+        
 
-                if is_machine_off(val) {
-                    println!("[Daemon-{}]. Machine is off. Exiting", machine_id);
+                if is_machine_off(machine_response.state) {
+                    println!("[Daemon-{}]. Machine is off. Exiting", machine.machine_id);
                     return;
                 }
             }

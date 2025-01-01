@@ -1,6 +1,7 @@
 use crate::cache_reg::update_cache;
+use deadpool_postgres::Pool;
 use ml_cleaner::client_adapters::{
-    database::{PGClient, AsyncDbClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
+    database::{machine_db::MachineDb, AsyncDbClient, PGClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
 };
 
 use serde_json::json;
@@ -188,21 +189,16 @@ pub async fn get_machine_status(
 // }
 
 pub async fn start_or_stop_machine(
+    pool:Pool,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
     machine_action: &str,
 ) -> Result<(), ModelHubServiceError> {
-    let proj = config_service::get_project_by_project_name(project_name)
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-    let dep = proj
-        .get_project_deployment(deployment_name)
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-    let mach = dep
-        .get_machine_by_machine_id(machine_id)
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    
+    let mach_repo = MachineDb{client:pool.get().await.unwrap()};
+    let mach = mach_repo.get_machine_by_id(machine_id)
+        .await.map_err(|err|ModelHubServiceError(format!("failed to retreive machine. {err}")))?;
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
@@ -220,11 +216,10 @@ pub async fn start_or_stop_machine(
         let _ = db_client.execute("INSERT into machines (machine_id, state) VALUES ($1, $2) ON CONFLICT(machine_id) DO UPDATE set state=$2", &[&machine_id, &MachineState::Off]).await
             .map_err(|err| ModelHubServiceError(err.to_string()))?;
 
-        let m_id = machine_id.to_owned();
         tauri::async_runtime::spawn(async move {
             println!("[Paperspace] Invoking state poll");
 
-            state_check_daemon(mach.provider.parse().unwrap(), m_id, String::from("machine_start")).await;
+            state_check_daemon(pool.clone(), mach,  String::from("machine_start")).await;        
         });
     } else if machine_action == "stop" {
         let _ = mdl_hub_client
