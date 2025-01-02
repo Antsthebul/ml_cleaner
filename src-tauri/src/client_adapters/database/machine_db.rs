@@ -53,7 +53,6 @@ impl Machine {
             ip_address:ip_address,
             provider: row.get("provider")
         })
-
     }
 }
 

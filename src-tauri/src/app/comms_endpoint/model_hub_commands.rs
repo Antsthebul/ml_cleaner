@@ -62,7 +62,7 @@ pub async fn start_machine(
     machine_id: &str,
 ) -> Result<String, String> {
     println!(
-        "[ModelHubCommand] - START model request recieved for machine_id '{}'",
+        "[ModelHubStartCommand] - START model request recieved for machine_id '{}'",
         machine_id
     );
 
@@ -87,7 +87,7 @@ pub async fn stop_machine(
     machine_id: &str,
 ) -> Result<String, String> {
     println!(
-        "[ModelHubCommand] - STOP model request recieved for machine_id '{}'",
+        "[ModelHubStopCommand] - STOP model request recieved for machine_id '{}'",
         machine_id
     );
 
@@ -103,15 +103,17 @@ pub async fn stop_machine(
 
 #[tauri::command]
 pub async fn train_model(
+    state: State<'_, AppState>,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
 ) -> Result<String, String> {
     println!(
-        "[ModelHubCommand] - Training model request recieved for deyploment '{}'",
+        "[ModelHubTrainCommand] - Training model request recieved for deployment '{}'",
         deployment_name
     );
-    let _ = model_hub_service::train_model(deployment_name, project_name, machine_id)
+
+    let _ = model_hub_service::train_model(state.pool.clone(), deployment_name, project_name, machine_id)
         .await
         .map_err(|err| serialize_error(err.to_string()))?;
 

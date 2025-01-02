@@ -20,6 +20,12 @@ pub struct ClientMachineResponse {
 #[derive(Debug)]
 pub struct ModelHubError(String);
 
+impl Into<String> for  ModelHubError{
+    fn into(self) -> String {
+        self.0
+    }
+}
+
 #[derive(Debug)]
 pub enum ClientType {
     PaperSpace,

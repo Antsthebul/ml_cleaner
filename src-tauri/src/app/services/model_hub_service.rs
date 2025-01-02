@@ -1,7 +1,7 @@
 use crate::cache_reg::update_cache;
 use deadpool_postgres::Pool;
 use ml_cleaner::client_adapters::{
-    database::{machine_db::MachineDb, AsyncDbClient, PGClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
+    database::{activity_log_db::{self, ActivityLogDb}, machine_db::{Machine, MachineDb}, AsyncDbClient, PGClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
 };
 
 use serde_json::json;
@@ -19,6 +19,12 @@ pub struct ModelHubServiceError(String);
 impl fmt::Display for ModelHubServiceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl Into<String> for ModelHubServiceError{
+    fn into(self) -> String {
+        self.0
     }
 }
 /// Generates test/train data for related project.
@@ -347,50 +353,40 @@ pub async fn stop_train_model(
     Ok(())
 }
 pub async fn train_model(
+    pool:Pool,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
 ) -> Result<(), ModelHubServiceError> {
-    // We use the 'minimal' retreival method, since we only need provider
+    let machine_repo = MachineDb{client:pool.get().await.unwrap()};
 
-    let dep = get_deployment(deployment_name, project_name)?;
-
-    let mach = dep
-        .get_machine_by_machine_id(machine_id)
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    let mut mach = machine_repo.get_machine_by_id(machine_id)
+        .await.map_err(|err|ModelHubServiceError(err.into()))?;
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
-    let db_client = PGClient::new()
-        .await
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
+    println!("[ModelHub]. Training on IP {:?}", mach.ip_address);
 
-    let rows = db_client
-        .query(
-            "SELECT ip_address FROM machines where machine_id=$1",
-            &[&machine_id],
+    // SSH into server to simply run 'train' command
+    mdl_hub_client
+        .train_model(mach.ip_address.unwrap())
+        .await
+        .map_err(|err| ModelHubServiceError(err.into()))?;
+    
+    mach.state = MachineState::Training;
+
+    machine_repo.update_machine(mach)
+        .await
+        .map_err(|err| ModelHubServiceError(err.into()))?;
+
+    let activity_log_db = ActivityLogDb{client: pool.get().await.unwrap()};
+
+    activity_log_db.create_activity_log("starttrain".parse().unwrap(), 
+            &format!("{project_name} -> {deployment_name} -> {machine_id} has started training")
         )
         .await
-        .unwrap();
-    let ip_address = rows[0].get::<usize, String>(0);
-    println!("[ModelHub]. Training on IP {}", ip_address);
+        .map_err(|err|ModelHubServiceError(err.into()))?;
 
-    let _ = update_cache("machine", &format!("{}", ip_address))
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-    // SSH into server, and run train command
-    let _ = mdl_hub_client
-        .train_model(ip_address.parse().unwrap())
-        .await
-        .map_err(|err| ModelHubServiceError(err.to_string()))?;
-
-    let _ = db_client
-        .execute(
-            "UPDATE machines set state=$1 where machine_id=$2",
-            &[&MachineState::Training, &machine_id],
-        )
-        .await
-        .unwrap();
     Ok(())
 }
 

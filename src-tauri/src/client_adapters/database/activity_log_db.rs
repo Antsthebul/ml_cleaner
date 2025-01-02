@@ -4,30 +4,35 @@ use deadpool_postgres::Object;
 
 use super::DbClientError;
 
+#[derive(Debug)]
 pub enum ActivityLogAction{
-    CREATE,
-    UPDATE,
-    DELETE
+    Create,
+    Update,
+    Delete,
+    Start,
+    Stop,
+    TrainStart,
+    TrainStop
 }
 
 impl FromStr for ActivityLogAction{
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "create" => Ok(Self::CREATE),
-            "update" => Ok(Self::UPDATE),
-            "delete"=> Ok(Self::DELETE),
+            "create" => Ok(Self::Create),
+            "update" => Ok(Self::Update),
+            "delete"=> Ok(Self::Delete),
+            "start" => Ok(Self::Start),
+            "Stop" => Ok(Self::Stop),
+            "trainstart" => Ok(Self::TrainStart),
+            "trainstop" => Ok(Self::TrainStop),
             _ => Err(())
         }
     }
 }
 impl Display for ActivityLogAction{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self{
-            Self::CREATE=>write!(f,"CREATE"),
-            Self::UPDATE=>write!(f,"UPDATE"),
-            Self::DELETE=>write!(f,"DELETE")
-        }
+       write!(f, "{:?}", self)
     }
 }
 

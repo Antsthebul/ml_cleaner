@@ -1,9 +1,10 @@
 pub mod project_db;
 pub mod machine_db;
+pub mod machine_event_db;
 pub mod activity_log_db;
 
 use core::fmt;
-use std::{collections::HashMap, env};
+
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use tokio_postgres::{Client, NoTls};
@@ -17,7 +18,11 @@ mod machine_db_test;
 #[derive(Debug)]
 pub struct DbClientError(pub String);
 
-
+impl Into<String> for DbClientError{
+    fn into(self) -> String {
+        self.0
+    }
+}
 pub trait AsyncDbClient {
     fn new() ->  impl std::future::Future<Output = Result<Client, DbClientError>>;
 }
