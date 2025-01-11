@@ -1,5 +1,4 @@
 use tauri::State;
-use tokio::sync::Mutex;
 
 use crate::{app::{
     common::response_types::{serialize_error, serialize_response},
@@ -9,7 +8,7 @@ use crate::{app::{
 #[tauri::command]
 pub async fn get_all_projects(state: State<'_, AppState>) -> Result<String, String> {
     println!("[ProjectCommandEndpoint] Fetching All Projects route hit");
-    
+
     let service = ProjectService::new(state.pool.clone()).await
         .map_err(|err| serialize_error(err.to_string()))?;
 

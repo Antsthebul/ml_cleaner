@@ -2,6 +2,7 @@ pub mod project_db;
 pub mod machine_db;
 pub mod machine_event_db;
 pub mod activity_log_db;
+pub mod sq_builder;
 
 use core::fmt;
 

@@ -8,16 +8,17 @@ mod menu;
 
 use tauri::Manager;
 use ml_cleaner::client_adapters::{
-    database::{build_conn_args, create_connection_pool, machine_db::MachineDb}, get_run_environment, model_hub::state_check_daemon
+    database::{build_conn_args, create_connection_pool, 
+    machine_db::MachineDb}, 
+    model_hub::state_check_daemon,
+    get_run_environment, 
 };
-use postgres::Row;
+
 use tokio::sync::Mutex;
 
 use std::{env, path};
 
 mod config;
-
-use daemon::ModelHubRecord;
 
 
 use app::comms_endpoint::{
@@ -62,7 +63,7 @@ fn main() {
 
     tauri::Builder::default()
         .setup(|app|{
-            app.manage(Mutex::new(app_state));
+            app.manage(app_state);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -90,7 +91,7 @@ fn main() {
             get_training_results,
             download_model // list_machines, get_machine_by_machine_id, get_machine_status,
                            // update_configuration_file_command, start_machine, stop_machine, create_new_project,
-                           // get_all_projects, delete_project_by_name, train_model
+                           //  delete_project_by_name, train_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

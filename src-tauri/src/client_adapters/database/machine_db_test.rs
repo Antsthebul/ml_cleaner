@@ -7,6 +7,7 @@ fn parse_machine_create_from_str(){
         "machine_id":"Test1",
         "model":model,
         "price":0.03,
+        "provider":"paperspace"
     });
 
     let ser_data = serde_json::to_string(&data).unwrap();

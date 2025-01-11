@@ -14,18 +14,20 @@ class APIError extends Error {
   }
   
 export  async function loadProjects(){
-    console.log("Loading All Projects")
+    console.log("STORE - Loading All Projects")
     try{
 
         let response:string = await invoke("get_all_projects")
         let result:ResponseType<Project[]> = JSON.parse(response); 
-        console.log("eh ", result.data)
+        console.log("Why => ", result)
+      
         if (result.data){
             projects.set(result.data)
+            return
         }
         throw new APIError(result.error)
     }catch(err){
-        throw err
+        console.error("[STORE] - Failed to load projects", err)
     }
 }
 

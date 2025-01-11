@@ -34,3 +34,6 @@ run-test:
 	docker-compose --profile test up -d
 	-cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture --test-threads 1
 	docker-compose stop test-db
+
+check:
+	cargo check --manifest-path src-tauri/Cargo.toml

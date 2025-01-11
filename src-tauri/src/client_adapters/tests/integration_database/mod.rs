@@ -7,6 +7,8 @@ use crate::client_adapters::database::{create_connection_pool, DbClientError, bu
 
 mod project_db_int_test;
 mod machine_db_int_test;
+mod machine_event_db_int;
+
 pub struct MockDbClient{}
 
 impl MockDbClient{

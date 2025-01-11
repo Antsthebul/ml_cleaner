@@ -10,7 +10,8 @@ async fn test_machine_can_be_created_retrieved_and_deleted_success(){
     let mc = MachineCreate{
         machine_id: machine_id.into(),
         model:"A4000".into(),
-        price:0.04
+        price:0.04,
+        provider:"paperspace".into()
     };
 
     let client = MockDbClient::new().await.unwrap();

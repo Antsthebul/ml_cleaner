@@ -17,7 +17,8 @@ impl ProjectDb{
 
     pub async fn get_project_id(&self, project_name:&str) -> Result<i32, DbClientError>{
         let rows = self.client.query("SELECT id FROM projects WHERE name = $1", &[&project_name])
-        .await.map_err(|err| DbClientError(format!("unable to get project id use name={}. {}",project_name, err)))?;
+            .await
+            .map_err(|err| DbClientError(format!("unable to get project id use name={}. {}",project_name, err)))?;
 
         if let Some(row) = rows.first(){
 
@@ -30,11 +31,12 @@ impl ProjectDb{
     }
 
     pub async fn get_all_projects(&self) -> Result<Vec<Project>, DbClientError>{
-
+        println!("gang");
         let rows = self.client.query("SELECT p.id as project_id, p.name as project_name, 
-        p.created_at as project_created_at, d.id as deployment_id, d.name as deployment_name, 
-        d.created_at as deployment_created_at FROM projects p 
-        JOIN deployments d ON p.id = d.project_id", &[]).await
+            p.created_at as project_created_at, d.id as deployment_id, d.name as deployment_name, 
+            d.created_at as deployment_created_at FROM projects p 
+            JOIN deployments d ON p.id = d.project_id", &[])
+            .await
             .map_err(|err| DbClientError(format!("environment_db failed when getting all projects. {}", err))
             )?;
                    
@@ -63,11 +65,11 @@ impl ProjectDb{
                 projects.insert(idx, project);
             }
         }
-        
+        println!("Gone");
         Ok(projects.into_values().collect())
     }
 
-    pub async fn get_project_by_name(&self, name:&str, )->Result<Project, DbClientError>{
+    pub async fn get_project_by_name(&self, name:&str)->Result<Project, DbClientError>{
        
         let rows = self.client.query("SELECT p.id as project_id, p.name as project_name, 
             p.created_at as project_created_at, d.id as deployment_id, d.name as deployment_name, 

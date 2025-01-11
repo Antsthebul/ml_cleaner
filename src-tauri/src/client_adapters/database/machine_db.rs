@@ -8,14 +8,15 @@ use crate::client_adapters::{
     utils::ParseError
 };
 
-use super::DbClientError;
+use super::{sq_builder::SQBuilder, DbClientError};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct MachineCreate{
     pub machine_id: String,
     pub model: String,
-    pub price:f32
+    pub price:f32,
+    pub provider: String
 }
 
 #[derive(Deserialize)]
@@ -70,12 +71,11 @@ pub struct MachineDb{
 
 impl MachineDb{
     pub async fn create_machine(&self, data:MachineCreate ) -> Result<(), DbClientError>{
+
         let _ = self.client.execute("INSERT INTO machines 
-            (machine_id, model, price, state) VALUES ($1,$2,$3, $4)",
-            &[&data.machine_id, &data.model, &data.price, &MachineState::Off])
+            (machine_id, model, price, state, provider) VALUES ($1,$2,$3, $4, $5)",
+            &[&data.machine_id, &data.model, &data.price, &MachineState::Off, &data.provider])
                 .await.map_err(|err| DbClientError(format!("unable to create machine {err}")))?;
-            
-         
             Ok(())
         }
     
