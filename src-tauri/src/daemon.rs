@@ -4,7 +4,6 @@ use std::net::Ipv4Addr;
 
 // use ml_cleaner::file_config::Configuration;
 
-
 pub struct ModelHubRecord {
     // pub machine_ip: Ipv4Addr,
     // pub project_name: String,

@@ -1,25 +1,21 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod cache_reg;
 mod app;
+mod cache_reg;
 mod daemon;
 mod menu;
 
-use tauri::Manager;
 use ml_cleaner::client_adapters::{
-    database::{build_conn_args, create_connection_pool, 
-    machine_db::MachineDb}, 
+    database::{build_conn_args, create_connection_pool, machine_db::MachineDb},
+    get_run_environment,
     model_hub::state_check_daemon,
-    get_run_environment, 
 };
-
-use tokio::sync::Mutex;
+use tauri::Manager;
 
 use std::{env, path};
 
 mod config;
-
 
 use app::comms_endpoint::{
     config_commands::get_config,
@@ -33,36 +29,32 @@ use app::comms_endpoint::{
         start_machine, stop_machine, stop_train_model, train_model,
     },
     project_commands::{
-        create_project,
-        get_all_projects, 
-        get_project_by_project_name, 
+        create_project, delete_deployment, get_all_projects, get_project_by_project_name,
         get_project_deployment,
-        delete_deployment
     },
 };
 use dotenvy;
 
 use deadpool_postgres::Pool;
 
-pub struct AppState{
-    pool: Pool
+pub struct AppState {
+    pool: Pool,
 }
 
-impl Default for AppState{
+impl Default for AppState {
     fn default() -> Self {
-        Self{
-            pool: create_connection_pool(build_conn_args())
+        Self {
+            pool: create_connection_pool(build_conn_args()),
         }
     }
 }
-
 
 fn main() {
     let app_state = AppState::default();
     startup_function(app_state.pool.clone());
 
     tauri::Builder::default()
-        .setup(|app|{
+        .setup(|app| {
             app.manage(app_state);
             Ok(())
         })
@@ -95,8 +87,7 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-
-    }
+}
 
 fn load_env() -> Result<(), std::env::VarError> {
     dotenvy::from_path(path::Path::new("../.env"))
@@ -116,17 +107,19 @@ fn startup_function(pool: Pool) {
 
     let pool_clone = pool.clone();
     let records = tauri::async_runtime::block_on(async move {
-        let machine_db = MachineDb{client: pool_clone.get().await.unwrap()};
+        let machine_db = MachineDb {
+            client: pool_clone.get().await.unwrap(),
+        };
 
-        let results = machine_db.get_all_machines()
-            .await;
-        
-        match results{
-            Ok(machines)=>machines,
-            Err(err)=> {println!("Unable to sync machines. {err}");
-                        vec![]}
+        let results = machine_db.get_all_machines().await;
+
+        match results {
+            Ok(machines) => machines,
+            Err(err) => {
+                println!("Unable to sync machines. {err}");
+                vec![]
+            }
         }
-
     });
 
     if records.len() == 0 {
@@ -138,7 +131,7 @@ fn startup_function(pool: Pool) {
         tauri::async_runtime::spawn(async move {
             state_check_daemon(pool_clone, r, String::from("startup")).await;
         });
-    };
+    }
 
     println!("Startup process complete!\n");
     println!("Running in **{}**", get_run_environment())

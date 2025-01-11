@@ -1,5 +1,6 @@
-use crate::app::{common::response_types::{serialize_error, serialize_response, serialize_success},
-    services::data_lake_service
+use crate::app::{
+    common::response_types::{serialize_error, serialize_response, serialize_success},
+    services::data_lake_service,
 };
 
 #[tauri::command]

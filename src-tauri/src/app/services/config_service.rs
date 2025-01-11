@@ -1,6 +1,6 @@
 use crate::app::{
+    common::response_types::{serialize_response, serialize_success},
     services,
-    common::response_types::{serialize_response, serialize_success}
 };
 use ml_cleaner::client_adapters::models::{Configuration, Project};
 

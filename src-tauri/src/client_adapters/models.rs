@@ -57,15 +57,15 @@ pub struct Configuration {
 pub struct Deployment {
     pub name: String,
     pub machines: Vec<ProjectMachine>,
-    pub created_at: NaiveDateTime
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Project {
-    pub id:i32,
+    pub id: i32,
     pub name: String,
     pub deployments: Vec<Deployment>,
-    pub created_at: NaiveDateTime
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -74,9 +74,8 @@ pub struct FileAttr {
     pub exists: bool,
 }
 impl Project {
-    pub fn add_deployment(&mut self, deployment:Deployment){
+    pub fn add_deployment(&mut self, deployment: Deployment) {
         self.deployments.push(deployment);
-
     }
     pub fn get_project_deployment(
         &self,

@@ -2,7 +2,6 @@ use ml_cleaner::client_adapters::models::ProjectMachine;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-
 #[derive(Debug, Deserialize, Serialize)]
 
 pub struct FileDataResponse {

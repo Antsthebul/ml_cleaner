@@ -76,3 +76,4 @@ class MachineRepository(BaseRepository):
             name="FODDENIE",
             state=state
         )
+    

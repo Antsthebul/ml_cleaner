@@ -1,8 +1,5 @@
-use std::{path, fs};
-use crate::client_adapters::models::{
-    Configuration,
-    ConfigurationFileError
-};
+use crate::client_adapters::models::{Configuration, ConfigurationFileError};
+use std::{fs, path};
 
 /// Returns the file and bool indicating if the file was created, or returns
 /// error

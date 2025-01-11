@@ -14,9 +14,11 @@ use std::{
 };
 
 use super::{orkestr8_download_model, Client, ModelHubError};
-use crate::client_adapters:: {
-    get_run_environment, ENVIRONMENT,
-    model_hub::{orkestr8_run, ClientMachineResponse}};
+use crate::client_adapters::{
+    get_run_environment,
+    model_hub::{orkestr8_run, ClientMachineResponse},
+    ENVIRONMENT,
+};
 use postgres_types::{FromSql, ToSql};
 
 pub struct PaperSpaceClientError(String);
@@ -43,7 +45,6 @@ pub enum MachineState {
     #[postgres(name = "training")]
     Training,
 }
-
 
 #[derive(Debug)]
 enum RequestType {
@@ -140,25 +141,25 @@ fn create_ssh_session_backend(
 fn create_ssh_session(
     ip_address: Ipv4Addr,
 ) -> Result<SessionConnector<TcpStream>, PaperSpaceClientError> {
-    let requested_address = match get_run_environment(){
+    let requested_address = match get_run_environment() {
         ENVIRONMENT::LOCAL => String::from("localhost:22"),
-        ENVIRONMENT::PRODUCTION => format!("{}:22",ip_address)
+        ENVIRONMENT::PRODUCTION => format!("{}:22", ip_address),
     };
     create_session()
-        .username(match get_run_environment(){
-            ENVIRONMENT::LOCAL=>"root",
-            ENVIRONMENT::PRODUCTION=>"paperspace"
+        .username(match get_run_environment() {
+            ENVIRONMENT::LOCAL => "root",
+            ENVIRONMENT::PRODUCTION => "paperspace",
         })
         .private_key_path("C:/Users/Antho/.ssh/id_rsa")
         .connect(requested_address)
-        .map_err(|err| PaperSpaceClientError(format!("failed to create SSH session. {}",err)))
+        .map_err(|err| PaperSpaceClientError(format!("failed to create SSH session. {}", err)))
 }
 
 impl Client for PaperSpaceClient {
     fn get_base_url() -> String {
-        match get_run_environment(){
-            ENVIRONMENT::PRODUCTION=> "https://api.paperspace.com/v1/machines".to_string(),
-            ENVIRONMENT::LOCAL=> "http://localhost:8000".to_string()
+        match get_run_environment() {
+            ENVIRONMENT::PRODUCTION => "https://api.paperspace.com/v1/machines".to_string(),
+            ENVIRONMENT::LOCAL => "http://localhost:8000".to_string(),
         }
     }
     fn new() -> Self {
@@ -180,8 +181,8 @@ impl Client for PaperSpaceClient {
         }
     }
     async fn stop_train_model(&self, ip_address: Ipv4Addr) -> Result<(), ModelHubError> {
-        let mut s = create_ssh_session_local(ip_address)
-            .map_err(|err| ModelHubError(err.to_string()))?;
+        let mut s =
+            create_ssh_session_local(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
 
         let exec = s.open_exec().unwrap();
 
@@ -240,9 +241,8 @@ impl Client for PaperSpaceClient {
         ip_address: Ipv4Addr,
         deployment_name: &str,
     ) -> Result<(), ModelHubError> {
-        let mut s = 
+        let mut s =
             create_ssh_session_backend(ip_address).map_err(|err| ModelHubError(err.to_string()))?;
-
 
         let mut exec = s.open_exec().unwrap();
 
@@ -344,12 +344,12 @@ impl Client for PaperSpaceClient {
         let response = self
             .get_machine_by_machine_id(machine_id)
             .await
-            .map_err(|err| ModelHubError(format!("failed to get_machine_by_id. {}",err)))?;
+            .map_err(|err| ModelHubError(format!("failed to get_machine_by_id. {}", err)))?;
 
         let mut state = response.state;
         if state == MachineState::Ready {
             if let Ok(mut s) = create_ssh_session_local(response.public_ip_address.unwrap())
-                .map_err(|err| ModelHubError(format!("session could not be created. {}",err)))
+                .map_err(|err| ModelHubError(format!("session could not be created. {}", err)))
             {
                 let exec = s.open_exec().unwrap();
                 let res: Vec<u8> = exec.send_command("orkestr8 check").unwrap();
@@ -358,11 +358,10 @@ impl Client for PaperSpaceClient {
                     "ACTIVE" => state = MachineState::Training,
                     "INACTIVE" => state = MachineState::Ready,
                     x => {
-                        if x.contains("orkestr8: command not found"){
+                        if x.contains("orkestr8: command not found") {
                             println!("Orkestr8 not installed on server");
-                        }else{
+                        } else {
                             println!("checking status returned unknown output {:?}", x);
-
                         }
                     }
                 }

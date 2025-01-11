@@ -9,18 +9,6 @@
 <script lang="ts">
     import '../app.css';
     import { SideNav } from '$lib';
-    import {onMount} from 'svelte'
-    import {loadProjects} from '$lib/store'
-    import ConfigAPI from '$lib/api/ConfigAPI';
-
-    onMount( async ()=>{
-        try{
-            await ConfigAPI.getConfig()
-            await loadProjects()
-        }catch(err){
-            console.error(`[Home] Failed to load projects due to the following '${err}'`)
-        }
-    })
 
 </script>
 

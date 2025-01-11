@@ -1,31 +1,27 @@
-pub mod project_db;
+pub mod activity_log_db;
 pub mod machine_db;
 pub mod machine_event_db;
-pub mod activity_log_db;
+pub mod project_db;
 pub mod sq_builder;
 
 use core::fmt;
 
-
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use tokio_postgres::{Client, NoTls};
-
-
 
 #[cfg(test)]
 mod machine_db_test;
 
-
 #[derive(Debug)]
 pub struct DbClientError(pub String);
 
-impl Into<String> for DbClientError{
+impl Into<String> for DbClientError {
     fn into(self) -> String {
         self.0
     }
 }
 pub trait AsyncDbClient {
-    fn new() ->  impl std::future::Future<Output = Result<Client, DbClientError>>;
+    fn new() -> impl std::future::Future<Output = Result<Client, DbClientError>>;
 }
 
 impl fmt::Display for DbClientError {
@@ -34,8 +30,8 @@ impl fmt::Display for DbClientError {
     }
 }
 
-pub struct PGClient{
-    client: Client
+pub struct PGClient {
+    client: Client,
 }
 
 impl AsyncDbClient for PGClient {
@@ -55,46 +51,43 @@ impl AsyncDbClient for PGClient {
         Ok(c)
     }
 }
-pub struct ConnectionArgs{
+pub struct ConnectionArgs {
     host: String,
-    user:String,
+    user: String,
     port: u16,
-    password:String,
-    name:String
+    password: String,
+    name: String,
 }
-pub fn build_conn_args() -> ConnectionArgs{
-    ConnectionArgs{
+pub fn build_conn_args() -> ConnectionArgs {
+    ConnectionArgs {
         host: "host.docker.internal".into(),
-        user:"ml_cleaner".into(),
-        port:5432,
-        password:"ml_cleaner".into(),
-        name:"local_db".into()
+        user: "ml_cleaner".into(),
+        port: 5432,
+        password: "ml_cleaner".into(),
+        name: "local_db".into(),
     }
 }
-pub fn build_test_conn_args()->ConnectionArgs{
-    ConnectionArgs{
+pub fn build_test_conn_args() -> ConnectionArgs {
+    ConnectionArgs {
         host: "host.docker.internal".into(),
-        user:"ml_cleaner".into(),
-        port:5433,
-        password:"ml_cleaner".into(),
-        name:"test".into()
+        user: "ml_cleaner".into(),
+        port: 5433,
+        password: "ml_cleaner".into(),
+        name: "test".into(),
     }
 }
 
-pub fn create_connection_pool(conn_args:ConnectionArgs) -> Pool{
-    
+pub fn create_connection_pool(conn_args: ConnectionArgs) -> Pool {
     let mut cfg = Config::new();
     cfg.manager = Some(ManagerConfig {
         recycling_method: RecyclingMethod::Fast,
-    });           
-    
-    cfg.host=Some(conn_args.host);
-    cfg.user=Some(conn_args.user);
-    cfg.password=Some(conn_args.password); 
-    cfg.dbname=Some(conn_args.name);
-    cfg.port=Some(conn_args.port);
+    });
+
+    cfg.host = Some(conn_args.host);
+    cfg.user = Some(conn_args.user);
+    cfg.password = Some(conn_args.password);
+    cfg.dbname = Some(conn_args.name);
+    cfg.port = Some(conn_args.port);
 
     cfg.create_pool(Some(Runtime::Tokio1), NoTls).unwrap()
-
-
 }

@@ -115,7 +115,6 @@ pub async fn sync(project_name: &str) -> Result<(), ImageStoreServiceError> {
 /// Get all classes for project
 /// TODO: Except project name
 pub async fn get_all_classes() -> Result<Vec<String>, ImageStoreServiceError> {
-    
     let mut verifier_client = ImageVerifierClient::new().await.unwrap();
     Ok(verifier_client
         .get_all_class_names()

@@ -1,6 +1,6 @@
 use crate::app::services::project_service;
-use ml_cleaner::client_adapters::lake_client::*;
 use bytes::Bytes;
+use ml_cleaner::client_adapters::lake_client::*;
 
 use super::config_service;
 pub struct LakeServiceError(String);
@@ -31,8 +31,7 @@ pub async fn get_data_for_class(
     let mut path = String::from(""); // This is JUST  to get shit to pass
     path.push_str(dep_name);
 
-    let lc = LakeClient::new("Fix this too")
-        .map_err(|err| LakeServiceError(err.to_string()))?;
+    let lc = LakeClient::new("Fix this too").map_err(|err| LakeServiceError(err.to_string()))?;
 
     Ok(lc
         .get_data_for_class(path.as_str(), page)

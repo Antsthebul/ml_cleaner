@@ -3,40 +3,40 @@ pub mod file_config;
 pub mod image_verifier;
 pub mod lake_client;
 pub mod model_hub;
-pub mod time_series_repo;
-pub mod repository;
 pub mod models;
+pub mod repository;
+pub mod time_series_repo;
 pub mod utils;
 
-use std::{fmt,env};
+use std::{env, fmt};
 
 #[cfg(test)]
 mod tests;
 
-pub enum ENVIRONMENT{
+pub enum ENVIRONMENT {
     LOCAL,
-    PRODUCTION
+    PRODUCTION,
 }
 
-impl fmt::Display for ENVIRONMENT{
-    fn fmt (&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
-        match self{
+impl fmt::Display for ENVIRONMENT {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
             ENVIRONMENT::LOCAL => write!(f, "local"),
-            ENVIRONMENT::PRODUCTION => write!(f, "production")
+            ENVIRONMENT::PRODUCTION => write!(f, "production"),
         }
     }
 }
 
-pub fn get_run_environment()-> ENVIRONMENT{
-    match env::var("ENVIRONMENT"){
-        Ok(val)=> {
-            if val.to_lowercase() == String::from("local"){
-            ENVIRONMENT::LOCAL
-        }else{
-            ENVIRONMENT::PRODUCTION
+pub fn get_run_environment() -> ENVIRONMENT {
+    match env::var("ENVIRONMENT") {
+        Ok(val) => {
+            if val.to_lowercase() == String::from("local") {
+                ENVIRONMENT::LOCAL
+            } else {
+                ENVIRONMENT::PRODUCTION
+            }
         }
-        },
-        Err(err)=>{
+        Err(err) => {
             println!("Environment should be set. {}", err);
             ENVIRONMENT::PRODUCTION
         }

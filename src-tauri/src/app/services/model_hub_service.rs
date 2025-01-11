@@ -1,7 +1,14 @@
 use crate::cache_reg::update_cache;
 use deadpool_postgres::Pool;
 use ml_cleaner::client_adapters::{
-    database::{activity_log_db::{self, ActivityLogDb}, machine_db::{Machine, MachineDb}, AsyncDbClient, PGClient}, model_hub::{ create_client, state_check_daemon, Client, ClientMachineResponse, MachineState}, models::Deployment, time_series_repo::{insert_record, TrainingData}
+    database::{
+        activity_log_db::{self, ActivityLogDb},
+        machine_db::{Machine, MachineDb, Queryable},
+        AsyncDbClient, PGClient,
+    },
+    model_hub::{create_client, state_check_daemon, Client, ClientMachineResponse, MachineState},
+    models::Deployment,
+    time_series_repo::{insert_record, TrainingData},
 };
 
 use serde_json::json;
@@ -13,7 +20,6 @@ use super::{
 };
 use rand::prelude::SliceRandom;
 
-
 pub struct ModelHubServiceError(String);
 
 impl fmt::Display for ModelHubServiceError {
@@ -22,7 +28,7 @@ impl fmt::Display for ModelHubServiceError {
     }
 }
 
-impl Into<String> for ModelHubServiceError{
+impl Into<String> for ModelHubServiceError {
     fn into(self) -> String {
         self.0
     }
@@ -143,7 +149,8 @@ pub async fn get_machine_status(
                     .await
                     .map_err(|err| ModelHubServiceError(err.to_string()))?,
             );
-        } else { // Query local dev server
+        } else {
+            // Query local dev server
             let rows = db_client
                 .query(
                     "SELECT ip_address, state FROM machines where machine_id=$1 ",
@@ -151,13 +158,11 @@ pub async fn get_machine_status(
                 )
                 .await
                 .map_err(|err| ModelHubServiceError(err.to_string()))?;
-            
-            if let Some(row) = rows.first(){
 
+            if let Some(row) = rows.first() {
                 let ip_addr_str = row.get::<usize, Option<&str>>(0);
                 let mut ip_address = None;
-                if let Some(ip_addr) = ip_addr_str{
-                    
+                if let Some(ip_addr) = ip_addr_str {
                     if let Ok(ip) = ip_addr.parse::<Ipv4Addr>() {
                         ip_address = Some(ip)
                     };
@@ -167,7 +172,7 @@ pub async fn get_machine_status(
                     ip_address: ip_address,
                     state: row.get(1),
                 });
-            }else{
+            } else {
                 println!("Machine ID not found {:?}", &m.id);
             };
         }
@@ -186,25 +191,28 @@ pub async fn get_machine_status(
 // (ie. "as a user these are your amchines") whereas Orkestr8ML works by
 // project.
 // pub async fn list_machines() {
-    // let pc = PaperSpaceClient::new();
-    // let machines = pc.get_machines().await
-    // .map_err(|err|serialize_error(err.to_string()))?;
+// let pc = PaperSpaceClient::new();
+// let machines = pc.get_machines().await
+// .map_err(|err|serialize_error(err.to_string()))?;
 
-    // let response = serde_json::json!({"data":machines});
-    // Ok(serde_json::to_string(&response).unwrap())
+// let response = serde_json::json!({"data":machines});
+// Ok(serde_json::to_string(&response).unwrap())
 // }
 
 pub async fn start_or_stop_machine(
-    pool:Pool,
+    pool: Pool,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
     machine_action: &str,
 ) -> Result<(), ModelHubServiceError> {
-    
-    let mach_repo = MachineDb{client:pool.get().await.unwrap()};
-    let mach = mach_repo.get_machine_by_id(machine_id)
-        .await.map_err(|err|ModelHubServiceError(format!("failed to retreive machine. {err}")))?;
+    let mach_repo = MachineDb {
+        client: pool.get().await.unwrap(),
+    };
+    let mach = mach_repo
+        .get_machine_by(vec![(Queryable::Id ,&machine_id)])
+        .await
+        .map_err(|err| ModelHubServiceError(format!("failed to retreive machine. {err}")))?;
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
@@ -225,7 +233,7 @@ pub async fn start_or_stop_machine(
         tauri::async_runtime::spawn(async move {
             println!("[Paperspace] Invoking state poll");
 
-            state_check_daemon(pool.clone(), mach,  String::from("machine_start")).await;        
+            state_check_daemon(pool.clone(), mach, String::from("machine_start")).await;
         });
     } else if machine_action == "stop" {
         let _ = mdl_hub_client
@@ -283,25 +291,28 @@ pub async fn get_training_results(
         .get_training_results(ip_address.parse().unwrap())
         .await
         .map_err(|err| ModelHubServiceError(err.to_string()))?;
-    
+
     if results.trim().is_empty() {
         return Err(ModelHubServiceError("No data".to_owned()));
     };
 
     if results.contains("connection refused") {
         return Err(ModelHubServiceError("connection refused".to_string()));
-    };        
-    
-    match TrainingData::parse(&results){
-    Ok(training_data) =>{
-     
-        insert_record(&training_data).await
-        .map_err(|err|ModelHubServiceError(format!("{:?}", err)))?;
-    
-        Ok(training_data)
-        }, 
+    };
 
-        Err(err)=>Err(ModelHubServiceError(format!("Parsing error failed {:?}", err)))
+    match TrainingData::parse(&results) {
+        Ok(training_data) => {
+            insert_record(&training_data)
+                .await
+                .map_err(|err| ModelHubServiceError(format!("{:?}", err)))?;
+
+            Ok(training_data)
+        }
+
+        Err(err) => Err(ModelHubServiceError(format!(
+            "Parsing error failed {:?}",
+            err
+        ))),
     }
 }
 
@@ -353,15 +364,19 @@ pub async fn stop_train_model(
     Ok(())
 }
 pub async fn train_model(
-    pool:Pool,
+    pool: Pool,
     deployment_name: &str,
     project_name: &str,
     machine_id: &str,
 ) -> Result<(), ModelHubServiceError> {
-    let machine_repo = MachineDb{client:pool.get().await.unwrap()};
+    let machine_repo = MachineDb {
+        client: pool.get().await.unwrap(),
+    };
 
-    let mut mach = machine_repo.get_machine_by_id(machine_id)
-        .await.map_err(|err|ModelHubServiceError(err.into()))?;
+    let mut mach = machine_repo
+        .get_machine_by(vec![( Queryable::Id, &machine_id)])
+        .await
+        .map_err(|err| ModelHubServiceError(err.into()))?;
 
     let mdl_hub_client = create_client(mach.provider.parse().unwrap()).unwrap();
 
@@ -372,20 +387,25 @@ pub async fn train_model(
         .train_model(mach.ip_address.unwrap())
         .await
         .map_err(|err| ModelHubServiceError(err.into()))?;
-    
+
     mach.state = MachineState::Training;
 
-    machine_repo.update_machine(mach)
+    machine_repo
+        .update_machine(mach)
         .await
         .map_err(|err| ModelHubServiceError(err.into()))?;
 
-    let activity_log_db = ActivityLogDb{client: pool.get().await.unwrap()};
+    let activity_log_db = ActivityLogDb {
+        client: pool.get().await.unwrap(),
+    };
 
-    activity_log_db.create_activity_log("starttrain".parse().unwrap(), 
-            &format!("{project_name} -> {deployment_name} -> {machine_id} has started training")
+    activity_log_db
+        .create_activity_log(
+            "starttrain".parse().unwrap(),
+            &format!("{project_name} -> {deployment_name} -> {machine_id} has started training"),
         )
         .await
-        .map_err(|err|ModelHubServiceError(err.into()))?;
+        .map_err(|err| ModelHubServiceError(err.into()))?;
 
     Ok(())
 }

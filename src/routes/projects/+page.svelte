@@ -38,18 +38,13 @@
 </style>
 <script lang="ts">
 
-    import { projects, loadProjects } from "$lib/store"
-    import { onMount } from "svelte";
+    import { projects } from "$lib/store"
 
 
-    onMount(async ()=>{
-        await loadProjects()
-    })
 </script>
 
 <div id="page">
     <div id="pageHeader">
-
         <h1>Projects</h1>
         <div id="buttonWrapper">
             <a class="button noLink" href="/create-project">Create Project</a>

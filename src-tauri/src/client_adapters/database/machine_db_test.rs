@@ -1,7 +1,7 @@
 use super::machine_db::MachineCreate;
 
 #[test]
-fn parse_machine_create_from_str(){
+fn parse_machine_create_from_str() {
     let model = "A4000";
     let data = serde_json::json!({
         "machine_id":"Test1",

@@ -23,7 +23,9 @@ CREATE TABLE machines (
     ip_address VARCHAR NULL,
     type VARCHAR NOT NULL,
     price REAL NOT NULL,
-    provider VARCHAR NOT NULL
+    provider VARCHAR NOT NULL,
+    project_id INT NULL,
+    deployment_id INT NULL
 );
 
 CREATE TABLE server_machines (
