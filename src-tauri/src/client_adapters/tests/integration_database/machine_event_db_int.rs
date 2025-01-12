@@ -1,14 +1,11 @@
 use crate::client_adapters::{database::machine_event_db::MachineEventDb, model_hub::MachineState};
 
-use super::MockDbClient;
+use super::setup_database;
 
 #[tokio::test]
 async fn test_create_machine_event() {
-    let client = MockDbClient::new().await.unwrap();
+    let client = setup_database().await;
     let test_machine_id = "ID12345";
-
-    let _ = client.execute("DELETE FROM machine_events", &[]).await.unwrap();
-    let _ = client.execute("DELETE FROM machines", &[]).await.unwrap();
 
     let _ = client
         .execute(

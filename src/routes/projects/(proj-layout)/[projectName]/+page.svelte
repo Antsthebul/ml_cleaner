@@ -42,7 +42,7 @@
 		<button 
 			id="add_node" 
 			class="button align-self-center bg-transparent border-light"
-			on:click={()=>goto(`/newProject`)}>
+			on:click={()=>goto(`/projects/${curProject}/newEnvironment`)}>
 
 			<AddNodeIcon />
 		</button>

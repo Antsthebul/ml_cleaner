@@ -19,7 +19,6 @@ export  async function loadProjects(){
 
         let response:string = await invoke("get_all_projects")
         let result:ResponseType<Project[]> = JSON.parse(response); 
-        console.log("Why => ", result)
       
         if (result.data){
             projects.set(result.data)
@@ -41,3 +40,5 @@ export async function loadProjectDetail(projectName:string){
         throw err
     }
 }
+
+export const newDeploymentName = writable("")

@@ -1,14 +1,13 @@
 use deadpool_postgres::Object;
-use postgres::NoTls;
-use tokio_postgres::Client;
 
 use crate::client_adapters::database::{
-    build_test_conn_args, create_connection_pool, DbClientError,
+    build_test_conn_args, create_connection_pool,
 };
 
 mod machine_db_int_test;
 mod machine_event_db_int;
 mod project_db_int_test;
+mod deployment_db_int_test;
 
 pub struct MockDbClient {}
 
@@ -19,4 +18,20 @@ impl MockDbClient {
 
         Ok(c)
     }
+}
+
+async fn reset_database(client: &Object){
+
+    for t in ["machine_events", "machines","deployments", "projects"]{
+
+        let _ = client.execute(&format!("DELETE FROM {t}"), &[]).await.unwrap();
+    }
+        
+}
+
+pub async fn setup_database() -> Object{
+    let client = MockDbClient::new().await.unwrap();
+    reset_database(&client)
+        .await;
+    client
 }

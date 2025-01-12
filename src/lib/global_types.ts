@@ -75,3 +75,10 @@ export interface TrainingDataDataSeries {
     val_loss: number,
     test_acc:number
 }
+
+export interface NewDeployment {
+    name: string,
+    description: string,
+    tags: string[],
+    project_id:number
+}

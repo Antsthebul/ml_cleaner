@@ -1,4 +1,4 @@
-use super::MockDbClient;
+use super::setup_database;
 use crate::client_adapters::database::machine_db::{MachineCreate, MachineDb, Queryable};
 
 #[tokio::test]
@@ -14,10 +14,7 @@ async fn test_machine_can_be_created_retrieved_and_deleted_success() {
         deployment_id: None
     };
 
-    let client = MockDbClient::new().await.unwrap();
-
-    let _ = client.execute("DELETE FROM machine_events", &[]).await.unwrap();
-    let _ = client.execute("DELETE FROM machines", &[]).await.unwrap();
+    let client = setup_database().await;
 
     let machine_db = MachineDb { client };
 

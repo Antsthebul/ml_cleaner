@@ -13,7 +13,7 @@
     import { page } from "$app/stores";
 	import type { SimpleSuccessResponse } from "$lib/global_types";
 	import { invoke } from "@tauri-apps/api/core";
-    import { projects } from "$lib/store"
+    import { newDeploymentName, projects } from "$lib/store"
     import { goto } from "$app/navigation"
 
     import CaretRightBold from '~icons/ph/caret-right-bold';
@@ -23,10 +23,8 @@
     const INIT_PROJECT = {envs:[]}
 
     let projectName = $page.params.projectName
-    
-    let curProject = data.project ?? INIT_PROJECT
-    
     $: currentDeployment = $page.params.deployment
+    
 
     async function deleteProject(){
         let data:string = await invoke("delete_project_by_name", {name:projectName})
@@ -61,11 +59,16 @@
         on:click={async ()=>handleNavigateDeployment("home")}>{projectName}</button>
         
         <!--Fake breadcrumbs-->
-        {#if  currentDeployment}
+        {#if  currentDeployment || $newDeploymentName }
         <span class="display-i-flex fit-content f-5 fake-link">
             <CaretRightBold />
         </span>
-        <span class="fake-link">  {currentDeployment}</span>
+            {#if $newDeploymentName}
+            <span class="fake-link"> {$newDeploymentName}</span>
+            {:else}
+            <span>  {currentDeployment} </span>
+            {/if}
+
         {/if}
     </div>
     <slot></slot>

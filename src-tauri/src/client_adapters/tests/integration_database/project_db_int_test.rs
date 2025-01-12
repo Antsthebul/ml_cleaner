@@ -1,16 +1,10 @@
-use super::MockDbClient;
+use super::setup_database;
 use crate::client_adapters::database::project_db::ProjectDb;
 
 #[tokio::test]
 async fn test_get_all_projects() {
     // ARRAMGE
-    let client = MockDbClient::new().await.unwrap();
-
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
+    let client = setup_database().await;
 
     let data = vec!["test1", "test2"];
 
@@ -44,14 +38,9 @@ async fn test_get_all_projects() {
 #[tokio::test]
 async fn get_project_by_name() {
     // ARRANGE
-    let client = MockDbClient::new().await.unwrap();
-    let project_name = "test1";
+    let client = setup_database().await;
 
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
+    let project_name = "test1";
 
     let data = vec![project_name, "test2"];
 
@@ -85,14 +74,9 @@ async fn get_project_by_name() {
 #[tokio::test]
 async fn get_project_deployment_by_name() {
     // ARRANGE
-    let client = MockDbClient::new().await.unwrap();
-    let project_name = "test1";
+    let client = setup_database().await;
 
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
+    let project_name = "test1";
 
     let data = vec![project_name, "test2"];
 
@@ -129,14 +113,9 @@ async fn get_project_deployment_by_name() {
 #[tokio::test]
 async fn create_project() {
     // ARRANGE
-    let client = MockDbClient::new().await.unwrap();
-    let project_name = "test1";
+    let client = setup_database().await;
 
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
+    let project_name = "test1";
 
     let project_db = ProjectDb { client };
 
@@ -152,15 +131,10 @@ async fn create_project() {
 #[tokio::test]
 async fn create_deployment() {
     // ARRANGE
-    let client = MockDbClient::new().await.unwrap();
+    let client = setup_database().await;
+
     let project_name = "test1";
     let deployment_name = "dep-test1";
-
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
 
     let _ = client
         .execute("INSERT INTO projects (name) VALUES($1)", &[&project_name])
@@ -186,15 +160,11 @@ async fn create_deployment() {
 #[tokio::test]
 async fn delete_deployment() {
     // ARRANGE
-    let client = MockDbClient::new().await.unwrap();
+    let client = setup_database().await;
+
     let project_name = "test1";
     let deployment_name = "dep-test1";
 
-    let _ = client
-        .execute("DELETE FROM deployments", &[])
-        .await
-        .unwrap();
-    let _ = client.execute("DELETE FROM projects", &[]).await.unwrap();
 
     let data = vec![project_name, "test2"];
 
@@ -206,6 +176,7 @@ async fn delete_deployment() {
             )
             .await
             .unwrap();
+        
         let db_id: i32 = row.get(0);
         let _ = client
             .execute(
