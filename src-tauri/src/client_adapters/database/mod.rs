@@ -4,6 +4,7 @@ pub mod machine_event_db;
 pub mod project_db;
 pub mod sq_builder;
 pub mod deployment_db;
+pub mod tag_db;
 
 use core::fmt;
 

@@ -64,3 +64,11 @@ CREATE TABLE activity_log(
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     action TEXT NOT NULL  
 );
+
+CREATE TABLE tags(
+    name VARCHAR NOT NULL,
+    model VARCHAR NOT NULL,
+    object_id INT NOT NULL,
+
+    UNIQUE (name, model, object_id)
+);
